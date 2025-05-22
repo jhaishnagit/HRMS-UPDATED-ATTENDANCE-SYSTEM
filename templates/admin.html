@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Attendance System</title>
+    <link rel="icon" href="../static/uploads/logo.jpeg" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/admin.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Dashboard</h2>
+            </div>
+            <div class="profile-section">
+                {% if admin_profile.face_image_base64 %}
+                <div class="profile-circle">
+                    <img id="profile-pic" src="data:image/jpeg;base64,{{ admin_profile.face_image_base64 }}" alt="Admin Profile">
+                </div>
+                {% else %}
+                <div class="profile-circle">
+                    <img id="profile-pic" src="{{ url_for('static', filename='default_profile.jpg') }}" alt="Admin Profile">
+                </div>
+                {% endif %}
+                <div class="profile-info">
+                    <p><strong>Name:</strong> <span id="username-display">{{ admin_profile.username }}</span></p>
+                    <input type="text" id="username" value="{{ admin_profile.username }}" placeholder="Username">
+                    <p><strong>Email:</strong> <span id="email-display">{{ admin_profile.email }}</span></p>
+                    <input type="email" id="email" value="{{ admin_profile.email }}" placeholder="Email">
+                    <p><strong>Position:</strong> {{ admin_profile.position }}</p>
+                    <input type="text" id="position" value="{{ admin_profile.position }}" placeholder="Position">
+                    <input type="file" id="new-face-image" accept="image/*" style="display: none;">
+                    <button id="edit-profile-btn">Edit Profile</button>
+                    <button id="save-profile-btn">Save Changes</button>
+                </div>
+            </div>
+            <ul class="sidebar-nav">
+                <li data-section="dashboard" class="active"><a><i class="fas fa-home"></i> Dashboard</a></li>
+                <li data-section="users"><a><i class="fas fa-users"></i> Manage Users</a></li>
+                <li data-section="attendance"><a><i class="fas fa-clock"></i> Attendance Records</a></li>
+                <li data-section="weekly-rota"><a><i class="fas fa-calendar-week"></i> Weekly Rota</a></li>
+                <li data-section="notifications"><a><i class="fas fa-bell"></i> Send Notification</a></li>
+                <li data-section="read-notifications"><a><i class="fas fa-envelope-open"></i> Read Notifications</a></li>
+                <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i> New User</a></li>
+                <li><a href="{{ url_for('view_excel') }}"><i class="fas fa-table"></i> View Excel</a></li>
+                <li><a href="{{ url_for('export') }}"><i class="fas fa-download"></i> Export Data</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
+        <main class="main-content">
+            <div class="header">
+                <h1>Admin Dashboard</h1>
+                <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+            </div>
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="{{ category }}">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <section class="content-section active" id="dashboard">
+                <div class="card">
+                    <h3>Attendance Overview</h3>
+                    <div class="search-bar">
+                        <form method="GET">
+                            <input type="text" name="search" placeholder="Search by username" value="{{ search_query }}">
+                            <button type="submit">Search</button>
+                        </form>
+                    </div>
+                    <p><strong>View:</strong>
+                        <span class="attendance-view-links">
+                            <a href="{{ url_for('admin', view='daily') }}" {% if view == 'daily' %}style="font-weight: bold;"{% endif %}>Daily</a> |
+                            <a href="{{ url_for('admin', view='weekly') }}" {% if view == 'weekly' %}style="font-weight: bold;"{% endif %}>Weekly</a> |
+                            <a href="{{ url_for('admin', view='monthly') }}" {% if view == 'monthly' %}style="font-weight: bold;"{% endif %}>Monthly</a> |
+                            <a href="{{ url_for('admin', view='yearly') }}" {% if view == 'yearly' %}style="font-weight: bold;"{% endif %}>Yearly</a>
+                        </span>
+                    </p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Position</th>
+                                <th>Login Time</th>
+                                <th>Login Location</th>
+                                <th>Logout Time</th>
+                                <th>Logout Location</th>
+                                <th>Hours Worked</th>
+                                <th>Daily Status</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                                {% for record in data %}
+                                    <tr>
+                                        <td>{{ record.username }}</td>
+                                        <td>{{ record.position }}</td>
+                                        <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time else 'N/A' }}</td>
+                                        <td>
+                                            {% if record.login_latitude is not none and record.login_longitude is not none %}
+                                                {{ record.login_latitude|round(4) }}, {{ record.login_longitude|round(4) }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if record.logout_time else 'N/A' }}</td>
+                                        <td>
+                                            {% if record.logout_latitude is not none and record.logout_longitude is not none %}
+                                                {{ record.logout_latitude|round(4) }}, {{ record.logout_longitude|round(4) }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
+                                        <td>{{ record.daily_status or 'N/A' }}</td>
+                                        <td>{{ record.status }}</td>
+                                        <td>
+                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Approve</button>
+                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Reject</button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="10">No records found.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="content-section" id="users">
+                <div class="card">
+                    <h3>Manage Users</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Position</th>
+                                <th>Face Image</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr id="user-{{ user.id }}">
+                                    <td>{{ user.id }}</td>
+                                    <td><span class="username-display">{{ user.username }}</span><input type="text" class="username-input" value="{{ user.username }}" style="display: none;"></td>
+                                    <td><span class="email-display">{{ user.email }}</span><input type="email" class="email-input" value="{{ user.email }}" style="display: none;"></td>
+                                    <td><span class="position-display">{{ user.position }}</span><input type="text" class="position-input" value="{{ user.position }}" style="display: none;"></td>
+                                    <td>
+                                        {% if user.face_image_base64 %}
+                                            <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="User Image" class="user-pic">
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
+                                        {% else %}
+                                            N/A
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="edit-user-btn" data-user-id="{{ user.id }}">Edit</button>
+                                        <button class="save-user-btn" data-user-id="{{ user.id }}" style="display: none;">Save</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="content-section" id="attendance">
+                <div class="card">
+                    <h3>All Attendance Records</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Position</th>
+                                <th>Login Time</th>
+                                <th>Login Location</th>
+                                <th>Logout Time</th>
+                                <th>Logout Location</th>
+                                <th>Hours Worked</th>
+                                <th>Daily Status</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if all_attendance %}
+                                {% for record in all_attendance %}
+                                    <tr>
+                                        <td>{{ record.username }}</td>
+                                        <td>{{ record.position }}</td>
+                                        <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time else 'N/A' }}</td>
+                                        <td>
+                                            {% if record.login_latitude is not none and record.login_longitude is not none %}
+                                                {{ record.login_latitude|round(4) }}, {{ record.login_longitude|round(4) }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if record.logout_time else 'N/A' }}</td>
+                                        <td>
+                                            {% if record.logout_latitude is not none and record.logout_longitude is not none %}
+                                                {{ record.logout_latitude|round(4) }}, {{ record.logout_longitude|round(4) }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
+                                        <td>{{ record.daily_status or 'N/A' }}</td>
+                                        <td>{{ record.status }}</td>
+                                        <td>
+                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Approve</button>
+                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Reject</button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="10">No records found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="content-section" id="weekly-rota">
+                <div class="card">
+                    <h3>Weekly Rota</h3>
+                    <div class="rota-upload">
+                        <input type="file" id="rota-image" accept="image/*">
+                        <button id="upload-rota-btn" class="btn">Upload Rota</button>
+                    </div>
+                    {% if rota_image_base64 %}
+                        <p><strong>Current Weekly Rota:</strong></p>
+                        <img src="data:image/jpeg;base64,{{ rota_image_base64 }}" alt="Weekly Rota" class="rota-image">
+                    {% else %}
+                        <p>No weekly rota uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="content-section" id="notifications">
+                <div class="card">
+                    <h3>Send Notification to All Users</h3>
+                    <div class="notification-form">
+                        <textarea id="notification-message" placeholder="Enter your message here" rows="4"></textarea>
+                        <button id="send-notification-btn">Send Notification</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-section" id="read-notifications">
+                <div class="card">
+                    <h3>Read Notifications Report</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Message</th>
+                                <th>Sent At</th>
+                                <th>Read At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if read_notifications %}
+                                {% for notif in read_notifications %}
+                                    <tr>
+                                        <td>{{ notif.username }}</td>
+                                        <td>{{ notif.message }}</td>
+                                        <td>{{ notif.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>{{ notif.read_at|strftime('%Y-%m-%d %H:%M:%S') if notif.read_at else 'N/A' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="4">No notifications read yet.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="../static/js/admin.js"></script>
+</body>
+</html>

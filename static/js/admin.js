@@ -1,0 +1,228 @@
+        document.addEventListener("DOMContentLoaded", function () {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navItems = document.querySelectorAll('.sidebar li[data-section]');
+            const sections = document.querySelectorAll('.content-section');
+
+            // Sidebar toggle for all screen sizes
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                mainContent.classList.toggle('expanded', isCollapsed);
+                mainContent.style.marginLeft = isCollapsed ? '0' : '280px';
+            });
+
+            // Close sidebar if clicked outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !menuToggle.contains(e.target) && !sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.remove('expanded');
+                    mainContent.style.marginLeft = '0';
+                }
+            });
+
+            // Initialize sidebar state based on screen size
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('expanded');
+                mainContent.style.marginLeft = '280px';
+            } else {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                mainContent.style.marginLeft = '0';
+            }
+
+            // Navigation to show only one section at a time, only for items with data-section
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const sectionId = item.getAttribute('data-section');
+                    if (sectionId) {
+                        e.preventDefault(); // Prevent default behavior only for section-switching items
+                        navItems.forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        sections.forEach(section => section.classList.remove('active'));
+                        const targetSection = document.getElementById(sectionId);
+                        targetSection.classList.add('active');
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.add('collapsed');
+                            mainContent.classList.remove('expanded');
+                            mainContent.style.marginLeft = '0';
+                        }
+                    }
+                });
+            });
+
+            // Admin Profile Edit
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const saveProfileBtn = document.getElementById('save-profile-btn');
+            const usernameInput = document.getElementById('username');
+            const emailInput = document.getElementById('email');
+            const positionInput = document.getElementById('position');
+            const newFaceImageInput = document.getElementById('new-face-image');
+            const profilePic = document.getElementById('profile-pic');
+            const usernameDisplay = document.getElementById('username-display');
+            const emailDisplay = document.getElementById('email-display');
+
+            editProfileBtn.addEventListener('click', () => {
+                usernameInput.classList.add('active');
+                emailInput.classList.add('active');
+                positionInput.classList.add('active');
+                newFaceImageInput.style.display = 'block';
+                usernameDisplay.style.display = 'none';
+                emailDisplay.style.display = 'none';
+                editProfileBtn.style.display = 'none';
+                saveProfileBtn.style.display = 'block';
+            });
+
+            newFaceImageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    profilePic.src = URL.createObjectURL(file);
+                }
+            });
+
+            saveProfileBtn.addEventListener('click', () => {
+                const formData = new FormData();
+                formData.append('username', usernameInput.value);
+                formData.append('email', emailInput.value);
+                formData.append('position', positionInput.value);
+                if (newFaceImageInput.files[0]) {
+                    formData.append('face_image', newFaceImageInput.files[0]);
+                }
+                fetch('/update_profile', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Profile updated successfully!');
+                            usernameDisplay.textContent = usernameInput.value;
+                            emailDisplay.textContent = emailInput.value;
+                            usernameInput.classList.remove('active');
+                            emailInput.classList.remove('active');
+                            positionInput.classList.remove('active');
+                            newFaceImageInput.style.display = 'none';
+                            usernameDisplay.style.display = 'inline';
+                            emailDisplay.style.display = 'inline';
+                            editProfileBtn.style.display = 'block';
+                            saveProfileBtn.style.display = 'none';
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            });
+
+            // Manage Users Edit
+            document.querySelectorAll('.edit-user-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.getAttribute('data-user-id');
+                    const row = document.getElementById(`user-${userId}`);
+                    row.querySelector('.username-display').style.display = 'none';
+                    row.querySelector('.email-display').style.display = 'none';
+                    row.querySelector('.position-display').style.display = 'none';
+                    row.querySelector('.username-input').style.display = 'block';
+                    row.querySelector('.email-input').style.display = 'block';
+                    row.querySelector('.position-input').style.display = 'block';
+                    row.querySelector('.face-image-input').style.display = 'block';
+                    btn.style.display = 'none';
+                    row.querySelector('.save-user-btn').style.display = 'block';
+                });
+            });
+
+            document.querySelectorAll('.save-user-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.getAttribute('data-user-id');
+                    const row = document.getElementById(`user-${userId}`);
+                    const formData = new FormData();
+                    formData.append('username', row.querySelector('.username-input').value);
+                    formData.append('email', row.querySelector('.email-input').value);
+                    formData.append('position', row.querySelector('.position-input').value);
+                    const faceImageInput = row.querySelector('.face-image-input');
+                    if (faceImageInput.files[0]) {
+                        formData.append('face_image', faceImageInput.files[0]);
+                    }
+                    fetch(`/admin_update_user/${userId}`, { method: 'POST', body: formData })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('User updated successfully!');
+                                row.querySelector('.username-display').textContent = row.querySelector('.username-input').value;
+                                row.querySelector('.email-display').textContent = row.querySelector('.email-input').value;
+                                row.querySelector('.position-display').textContent = row.querySelector('.position-input').value;
+                                if (faceImageInput.files[0]) {row.querySelector('.user-pic').src = URL.createObjectURL(faceImageInput.files[0]);}
+                                row.querySelector('.username-display').style.display = 'block';
+                                row.querySelector('.email-display').style.display = 'block';
+                                row.querySelector('.position-display').style.display = 'block';
+                                row.querySelector('.username-input').style.display = 'none';
+                                row.querySelector('.email-input').style.display = 'none';
+                                row.querySelector('.position-input').style.display = 'none';
+                                row.querySelector('.face-image-input').style.display = 'none';
+                                btn.style.display = 'none';
+                                row.querySelector('.edit-user-btn').style.display = 'block';
+                            } else {
+                                alert(data.message);
+                            }
+                        });
+                });
+            });
+
+            // Rota Upload
+            document.getElementById('upload-rota-btn').addEventListener('click', () => {
+                const fileInput = document.getElementById('rota-image');
+                const formData = new FormData();
+                formData.append('rota_image', fileInput.files[0]);
+                fetch('/upload_rota', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Rota uploaded successfully!');
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            });
+
+            // Send Notification
+            document.getElementById('send-notification-btn').addEventListener('click', () => {
+                const message = document.getElementById('notification-message').value;
+                fetch('/send_notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `message=${encodeURIComponent(message)}`
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Notification sent successfully!');
+                            document.getElementById('notification-message').value = '';
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            });
+
+            // Approve/Reject Attendance
+            document.querySelectorAll('.approve-btn, .reject-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const attendanceId = btn.getAttribute('data-attendance-id');
+                    const status = btn.classList.contains('approve-btn') ? 'approved' : 'rejected';
+                    fetch(`/update_attendance_status/${attendanceId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `status=${status}`
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Attendance status updated!');
+                                location.reload();
+                            } else {
+                                alert(data.message);
+                            }
+                        });
+                });
+            });
+        });
