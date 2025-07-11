@@ -21,7 +21,7 @@ app.secret_key = "Jhaishna123"
 db_config = {
     "host": "localhost",
     "user": "root",
-    "password": "jhaishna",
+    "password": "root",
     "database": "gps_face_db",
     "port": 3306,
     "pool_name": "mypool",
@@ -79,8 +79,9 @@ def init_db():
                     login_longitude FLOAT,
                     logout_latitude FLOAT,
                     logout_longitude FLOAT,
-                    daily_status TEXT,
-                    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                    daily_status_submitted TINYINT(1) DEFAULT 0,
+                    admin_verified TINYINT(1) DEFAULT 0,
+                    attendance_status ENUM('Present', 'Absent') DEFAULT 'Absent',
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
@@ -99,6 +100,16 @@ def init_db():
                     user_id INT,
                     is_read BOOLEAN DEFAULT 0,
                     read_at TIMESTAMP NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS daily_updates (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    update_message TEXT,
+                    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    verification_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
@@ -336,10 +347,10 @@ def dashboard():
             return redirect(url_for('logout'))
 
         print(f"🔍 Fetching today's attendance for user_id: {session['user_id']}")
-        cursor.execute("SELECT login_time, logout_time, daily_status FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
+        cursor.execute("SELECT login_time, logout_time, daily_status_submitted FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
         today_attendance = cursor.fetchone()
         can_login = not bool(today_attendance)
-        daily_status_submitted = bool(today_attendance and today_attendance['daily_status'])
+        daily_status_submitted = bool(today_attendance and today_attendance['daily_status_submitted'])
         attendance_submitted = bool(today_attendance and today_attendance['logout_time'])
         print(f"📅 Today's attendance: {'Found' if today_attendance else 'Not found'}, can_login={can_login}, daily_status_submitted={daily_status_submitted}, attendance_submitted={attendance_submitted}")
 
@@ -356,7 +367,7 @@ def dashboard():
 
         print(f"🔍 Fetching 30-day attendance history for user_id: {session['user_id']}")
         cursor.execute("""
-            SELECT DATE(login_time) as date, status 
+            SELECT DATE(login_time) as date, attendance_status 
             FROM attendance 
             WHERE user_id = %s AND login_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         """, (session['user_id'],))
@@ -365,13 +376,18 @@ def dashboard():
         for i in range(30):
             date = (datetime.now() - timedelta(days=i)).date()
             record = next((r for r in attendance_data if r['date'] == date), None)
-            attendance_records.append({'date': date, 'present': record['status'] == 'approved' if record else False})
+            attendance_records.append({'date': date, 'present': record['attendance_status'] == 'Present' if record else False})
         print(f"📅 Retrieved {len(attendance_records)} attendance records")
 
         print(f"🔍 Fetching notifications for user_id: {session['user_id']}")
         cursor.execute("SELECT message, created_at FROM notifications WHERE user_id = %s ORDER BY created_at DESC", (session['user_id'],))
         notifications = cursor.fetchall()
         print(f"🔔 Retrieved {len(notifications)} notifications")
+
+        print(f"🔍 Fetching daily updates for user_id: {session['user_id']}")
+        cursor.execute("SELECT update_message, submitted_at, verification_status FROM daily_updates WHERE user_id = %s ORDER BY submitted_at DESC", (session['user_id'],))
+        daily_updates = cursor.fetchall()
+        print(f"📝 Retrieved {len(daily_updates)} daily updates")
 
         print("🔍 Fetching latest rota image")
         cursor.execute("SELECT rota_image FROM rota ORDER BY uploaded_at DESC LIMIT 1")
@@ -395,6 +411,7 @@ def dashboard():
                               attendance_submitted=attendance_submitted,
                               attendance_records=attendance_records,
                               notifications=notifications,
+                              daily_updates=daily_updates,
                               rota_image_base64=rota_image_base64)
     except Exception as e:
         print(f"❌ Dashboard error: {str(e)}")
@@ -426,17 +443,13 @@ def login_photo():
         cursor.execute("SELECT face_image FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
-        if not user['face_image']:
-            print("❌ User face image not found")
-            return jsonify({"success": False, "message": "User face image not found"})
-
         registered_image = face_recognition.load_image_file(BytesIO(user['face_image']))
         captured_image = face_recognition.load_image_file(file)
         registered_enc = face_recognition.face_encodings(registered_image)
         captured_enc = face_recognition.face_encodings(captured_image)
 
         if not registered_enc or not captured_enc or not face_recognition.compare_faces([registered_enc[0]], captured_enc[0])[0]:
-            print("❌ Face verification failed")
+            print("❌ Face verification failed for login")
             return jsonify({"success": False, "message": "Face verification failed"})
 
         uploads_dir = os.path.join(app.static_folder, 'Uploads')
@@ -450,9 +463,9 @@ def login_photo():
         print(f"📍 Login location: ({latitude}, {longitude})")
 
         cursor.execute("""
-            INSERT INTO attendance (user_id, login_time, login_photo_path, login_latitude, login_longitude) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (session['user_id'], login_time, login_photo_path, latitude, longitude))
+            INSERT INTO attendance (user_id, login_time, login_photo_path, login_latitude, login_longitude, attendance_status) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (session['user_id'], login_time, login_photo_path, latitude, longitude, 'Present'))
         conn.commit()
         print("✅ Login recorded successfully")
         return jsonify({"success": True, "message": "Login recorded"})
@@ -480,10 +493,14 @@ def submit_daily_status():
     try:
         print(f"📝 Submitting daily status for user_id: {session['user_id']}")
         cursor.execute("""
+            INSERT INTO daily_updates (user_id, update_message) 
+            VALUES (%s, %s)
+        """, (session['user_id'], daily_status))
+        cursor.execute("""
             UPDATE attendance 
-            SET daily_status = %s 
+            SET daily_status_submitted = 1 
             WHERE user_id = %s AND DATE(login_time) = CURDATE() AND logout_time IS NULL
-        """, (daily_status, session['user_id']))
+        """, (session['user_id'],))
         conn.commit()
         print("✅ Daily status submitted successfully")
         return jsonify({"success": True, "message": "Daily status submitted"})
@@ -510,9 +527,9 @@ def logout_photo():
     cursor = conn.cursor(dictionary=True)
     try:
         print(f"🔍 Checking daily status for user_id: {session['user_id']}")
-        cursor.execute("SELECT daily_status FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
+        cursor.execute("SELECT daily_status_submitted FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
         attendance = cursor.fetchone()
-        if not attendance or not attendance['daily_status']:
+        if not attendance or not attendance['daily_status_submitted']:
             print("❌ Daily status not submitted")
             return jsonify({"success": False, "message": "Please submit your daily status report before logging out"})
 
@@ -784,7 +801,7 @@ def admin():
             query = """
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 WHERE DATE(a.login_time) = CURDATE()
@@ -794,7 +811,7 @@ def admin():
             query = """
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 WHERE WEEK(a.login_time) = WEEK(CURDATE())
@@ -804,7 +821,7 @@ def admin():
             query = """
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 WHERE MONTH(a.login_time) = MONTH(CURDATE())
@@ -814,7 +831,7 @@ def admin():
             query = """
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 WHERE YEAR(a.login_time) = YEAR(CURDATE())
@@ -841,7 +858,7 @@ def admin():
             cursor.execute("""
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 WHERE u.username LIKE %s
@@ -852,7 +869,7 @@ def admin():
             cursor.execute("""
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
-                       a.daily_status, a.status,
+                       a.daily_status_submitted, a.attendance_status,
                        TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
                 FROM users u LEFT JOIN attendance a ON u.id = a.user_id
                 ORDER BY a.login_time DESC
@@ -903,7 +920,7 @@ def update_attendance_status(attendance_id):
 
     status = request.form.get('status')
     print(f"🔄 Updating attendance status: attendance_id={attendance_id}, status={status}")
-    if status not in ['approved', 'rejected']:
+    if status not in ['Present', 'Absent']:
         print("❌ Invalid status provided")
         return jsonify({"success": False, "message": "Invalid status"})
 
@@ -913,7 +930,7 @@ def update_attendance_status(attendance_id):
         return jsonify({"success": False, "message": "Database error"})
     cursor = conn.cursor()
     try:
-        cursor.execute("UPDATE attendance SET status = %s WHERE id = %s", (status, attendance_id))
+        cursor.execute("UPDATE attendance SET attendance_status = %s WHERE id = %s", (status, attendance_id))
         conn.commit()
         print("✅ Attendance status updated")
         return jsonify({"success": True, "message": "Attendance status updated"})
@@ -938,7 +955,7 @@ def view_excel():
     try:
         print("🔍 Fetching attendance data for Excel view")
         cursor.execute("""
-            SELECT u.username, a.login_time, a.logout_time, a.daily_status, a.status,
+            SELECT u.username, a.login_time, a.logout_time, a.daily_status_submitted, a.attendance_status,
                    TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
             FROM users u LEFT JOIN attendance a ON u.id = a.user_id
         """)
@@ -958,7 +975,7 @@ def view_excel():
                 record['hours_worked'] = "N/A"
         print(f"📅 Processed {len(data)} attendance records for Excel view")
 
-        df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status', 'status', 'hours_worked']]
+        df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status_submitted', 'attendance_status', 'hours_worked']]
         html_table = df.to_html(index=False, classes='table table-striped')
         print("✅ Rendering Excel view template")
         return render_template('view_excel.html', table=html_table)
@@ -996,7 +1013,7 @@ def export():
     try:
         print("🔍 Fetching attendance data for Excel export")
         cursor.execute("""
-            SELECT u.username, a.login_time, a.logout_time, a.daily_status, a.status,
+            SELECT u.username, a.login_time, a.logout_time, a.daily_status_submitted, a.attendance_status,
                    TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
             FROM users u LEFT JOIN attendance a ON u.id = a.user_id
         """)
@@ -1016,7 +1033,7 @@ def export():
                 record['hours_worked'] = "N/A"
         print(f"📅 Processed {len(data)} attendance records for export")
 
-        df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status', 'status', 'hours_worked']]
+        df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status_submitted', 'attendance_status', 'hours_worked']]
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, sheet_name='Attendance', index=False)
