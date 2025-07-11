@@ -1,4 +1,4 @@
-        document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
             const navItems = document.querySelectorAll('.sidebar-nav li[data-section]');
             const sections = document.querySelectorAll('.content-section');
             const sidebar = document.getElementById('sidebar');
