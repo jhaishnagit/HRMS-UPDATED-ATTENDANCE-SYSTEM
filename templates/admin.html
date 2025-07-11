@@ -46,7 +46,7 @@
                 <li data-section="read-notifications"><a><i class="fas fa-envelope-open"></i> Read Notifications</a></li>
                 <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i> New User</a></li>
                 <li><a href="{{ url_for('view_excel') }}"><i class="fas fa-table"></i> View Excel</a></li>
-                <li><a href="{{ url_for('export') }}"><i class="fas fa-download"></i> Export Data</a></li>
+                <li><a href="{{ url_for('export') }}"><a href="{{ url_for('export_page') }}"><i class="fas fa-download"></i> Export Data</a></li>
                 <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
@@ -69,7 +69,7 @@
                 <div class="card">
                     <h3>Attendance Overview</h3>
                     <div class="search-bar">
-                        <form method="GET">
+                        <form method="GET" action="/admin">
                             <input type="text" name="search" placeholder="Search by username" value="{{ search_query }}">
                             <button type="submit">Search</button>
                         </form>
@@ -93,7 +93,7 @@
                                 <th>Logout Location</th>
                                 <th>Hours Worked</th>
                                 <th>Daily Status</th>
-                                <th>Status</th>
+                                <th>Attendance Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -120,11 +120,11 @@
                                             {% endif %}
                                         </td>
                                         <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
-                                        <td>{{ record.daily_status or 'N/A' }}</td>
-                                        <td>{{ record.status }}</td>
+                                        <td>{{ 'Submitted' if record.daily_status_submitted else 'Not Submitted' }}</td>
+                                        <td>{{ record.attendance_status }}</td>
                                         <td>
-                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Approve</button>
-                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Reject</button>
+                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
+                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -191,7 +191,7 @@
                                 <th>Logout Location</th>
                                 <th>Hours Worked</th>
                                 <th>Daily Status</th>
-                                <th>Status</th>
+                                <th>Attendance Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -218,11 +218,11 @@
                                             {% endif %}
                                         </td>
                                         <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
-                                        <td>{{ record.daily_status or 'N/A' }}</td>
-                                        <td>{{ record.status }}</td>
+                                        <td>{{ 'Submitted' if record.daily_status_submitted else 'Not Submitted' }}</td>
+                                        <td>{{ record.attendance_status }}</td>
                                         <td>
-                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Approve</button>
-                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Reject</button>
+                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
+                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -246,6 +246,7 @@
                     {% if rota_image_base64 %}
                         <p><strong>Current Weekly Rota:</strong></p>
                         <img src="data:image/jpeg;base64,{{ rota_image_base64 }}" alt="Weekly Rota" class="rota-image">
+                        <a href="data:image/jpeg;base64,{{ rota_image_base64 }}" download="weekly_rota.jpg">Download Weekly Rota</a>
                     {% else %}
                         <p>No weekly rota uploaded yet.</p>
                     {% endif %}
