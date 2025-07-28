@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Attendance System</title>
-    <link rel="icon" href="{{ url_for('static', filename='Uploads/logo.jpeg') }}" type="image/png">
+    <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
 <body>
     <div id="splash-screen">
-        <img src="{{ url_for('static', filename='Uploads/logo.jpeg') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='uploads/logo.jpeg') }}" alt="Logo">
     </div>
     <div class="container" style="display: none;">
         <div class="form-box">
-            <img src="{{ url_for('static', filename='Uploads/logo.jpeg') }}" alt="Login Image">
+            <img src="{{ url_for('static', filename='uploads/logo.jpeg') }}" alt="Login Image">
             <h2>Login</h2>
             <div class="flash-messages">
                 {% with messages = get_flashed_messages(with_categories=true) %}
