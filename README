@@ -207,3 +207,4 @@ By addressing these differences and aligning best practices, you can merge the s
 pip install opencv-contrib-python
 pip install python-dotenv
 pip install opencv-python
+pip install opencv-contrib-python face_recognition numpy
