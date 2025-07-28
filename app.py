@@ -21,7 +21,7 @@ app.secret_key = "Jhaishna123"
 db_config = {
     "host": "localhost",
     "user": "root",
-    "password": "root",
+    "password": "Jhaishna",
     "database": "gps_face_db",
     "port": 3306,
     "pool_name": "mypool",
