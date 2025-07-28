@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 from mysql.connector import pooling, Error
 import os
+import cv2
 import geocoder
 import pandas as pd
 from io import BytesIO
