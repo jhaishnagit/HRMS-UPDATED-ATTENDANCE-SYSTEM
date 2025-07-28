@@ -1,7 +1,7 @@
-create database gps_face_db;
+create database IF NOT Exists gps_face_db;
 use gps_face_db;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT Exists users (
     id INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE,
     email VARCHAR(100) UNIQUE,
@@ -13,14 +13,14 @@ CREATE TABLE users (
     PRIMARY KEY (id)
 );
 
-CREATE TABLE rota (
+CREATE TABLE IF NOT Exists rota (
     id INT NOT NULL AUTO_INCREMENT,
     rota_image LONGBLOB,
     uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 );
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT Exists notifications (
     id INT NOT NULL AUTO_INCREMENT,
     message TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +33,7 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE daily_updates (
+CREATE TABLE IF NOT Exists daily_updates (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT,
     update_message TEXT,
@@ -45,7 +45,7 @@ CREATE TABLE daily_updates (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE attendance (
+CREATE TABLE IF NOT Exists attendance (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT,
     login_time DATETIME,
