@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
         item.addEventListener('click', (e) => {
             const sectionId = item.getAttribute('data-section');
             if (sectionId) {
-                e.preventDefault(); // Prevent default behavior only for section-switching items
+                e.preventDefault();
                 navItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
                 sections.forEach(section => section.classList.remove('active'));
@@ -107,11 +107,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     emailDisplay.style.display = 'inline';
                     editProfileBtn.style.display = 'block';
                     saveProfileBtn.style.display = 'none';
+                    // Reload to reflect changes
                     location.reload();
                 } else {
                     alert(data.message);
                 }
-            });
+            })
+            .catch(error => console.error('Error updating profile:', error));
     });
 
     // Manage Users Edit
@@ -166,7 +168,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         alert(data.message);
                     }
-                });
+                })
+                .catch(error => console.error('Error updating user:', error));
         });
     });
 
@@ -188,7 +191,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     alert(data.message);
                 }
-            });
+            })
+            .catch(error => console.error('Error uploading rota:', error));
     });
 
     // Send Notification
@@ -211,7 +215,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     alert(data.message);
                 }
-            });
+            })
+            .catch(error => console.error('Error sending notification:', error));
     });
 
     // Approve/Reject Attendance
@@ -232,7 +237,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         alert(data.message);
                     }
-                });
+                })
+                .catch(error => console.error('Error updating attendance:', error));
         });
     });
 
