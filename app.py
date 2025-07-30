@@ -25,9 +25,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "Jhaishna123")  # Fallback for development
-# app.config['SESSION_COOKIE_SECURE'] = True  # Enable secure cookies for HTTPS
-# app.config['SESSION_COOKIE_HTTPONLY'] = True
-# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # MySQL Connection Pooling
 db_config = {
@@ -163,7 +160,7 @@ def login():
                 session['user_id'] = user['id']
                 session['username'] = user['username']
                 session['is_admin'] = user['is_admin'] if login_type == 'admin' else False
-                session.permanent = True  # Make session persistent
+                session.permanent = True
                 logging.info(f"🔐 Session after login: {dict(session)}")
                 flash("Login successful!", "success")
                 return redirect(url_for('admin' if session['is_admin'] else 'dashboard'))
@@ -327,7 +324,7 @@ def reset_password():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session or session.get('is_admin', False) is True:
+    if 'user_id' not in session or session.get('is_admin', False):
         flash("Access denied", "error")
         logging.info(f"🔐 Session: {dict(session)}")
         logging.error("❌ Access denied: User not logged in or is admin")
@@ -445,6 +442,10 @@ def login_photo():
         cursor.execute("SELECT face_image FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
+        if not user or not user['face_image']:
+            logging.error("❌ No registered face image found")
+            return jsonify({"success": False, "message": "No registered face image"})
+
         registered_image = face_recognition.load_image_file(BytesIO(user['face_image']))
         captured_image = face_recognition.load_image_file(file)
         registered_enc = face_recognition.face_encodings(registered_image)
@@ -455,6 +456,7 @@ def login_photo():
             return jsonify({"success": False, "message": "Face verification failed"})
 
         uploads_dir = os.path.join(app.static_folder, 'Uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
         login_time = datetime.now()
         login_photo_path = os.path.join(uploads_dir, f"{session['username']}_login_{login_time.strftime('%Y%m%d%H%M%S')}.jpg")
         file.save(login_photo_path)
@@ -469,8 +471,20 @@ def login_photo():
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (session['user_id'], login_time, login_photo_path, latitude, longitude, 'Present'))
         conn.commit()
+
+        # Convert captured image to base64 for JSON
+        with open(login_photo_path, 'rb') as image_file:
+            login_photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+
         logging.info("✅ Login recorded successfully")
-        return jsonify({"success": True, "message": "Login recorded"})
+        return jsonify({
+            "success": True,
+            "message": "Login recorded",
+            "login_photo": login_photo_base64
+        })
+    except Exception as e:
+        logging.error(f"❌ Login photo error: {str(e)}")
+        return jsonify({"success": False, "message": f"Error processing login: {str(e)}"})
     finally:
         cursor.close()
         conn.close()
@@ -549,6 +563,7 @@ def logout_photo():
             return jsonify({"success": False, "message": "Face verification failed"})
 
         uploads_dir = os.path.join(app.static_folder, 'Uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
         logout_time = datetime.now()
         logout_photo_path = os.path.join(uploads_dir, f"{session['username']}_logout_{logout_time.strftime('%Y%m%d%H%M%S')}.jpg")
         file.save(logout_photo_path)
@@ -566,8 +581,20 @@ def logout_photo():
             LIMIT 1
         """, (logout_time, logout_photo_path, latitude, longitude, session['user_id']))
         conn.commit()
+
+        # Convert captured image to base64 for JSON
+        with open(logout_photo_path, 'rb') as image_file:
+            logout_photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+
         logging.info("✅ Logout recorded successfully")
-        return jsonify({"success": True, "message": "Logout recorded"})
+        return jsonify({
+            "success": True,
+            "message": "Logout recorded",
+            "logout_photo": logout_photo_base64
+        })
+    except Exception as e:
+        logging.error(f"❌ Logout photo error: {str(e)}")
+        return jsonify({"success": False, "message": f"Error processing logout: {str(e)}"})
     finally:
         cursor.close()
         conn.close()
@@ -608,6 +635,12 @@ def update_profile():
             logging.info(f"🔄 Executing profile update query: {query}")
             cursor.execute(query, tuple(params))
             conn.commit()
+            # Refresh session data
+            cursor.execute("SELECT username, email, position FROM users WHERE id = %s", (session['user_id'],))
+            user_data = cursor.fetchone()
+            session['username'] = user_data['username']
+            session['email'] = user_data['email']  # Assuming you might want to store email in session
+            session['position'] = user_data['position']
             logging.info("✅ Profile updated successfully")
             return jsonify({"success": True, "message": "Profile updated"})
         logging.error("❌ No changes provided for profile update")
