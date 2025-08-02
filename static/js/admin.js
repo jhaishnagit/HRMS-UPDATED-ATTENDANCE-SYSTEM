@@ -4,18 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const menuToggle = document.querySelector('.menu-toggle');
     const navItems = document.querySelectorAll('.sidebar li[data-section]');
     const sections = document.querySelectorAll('.content-section');
-    const errorContainer = document.createElement('div');
-    errorContainer.className = 'error-message';
-    document.querySelector('.flash-messages').appendChild(errorContainer);
-
-    // Function to display errors
-    function showError(message) {
-        errorContainer.textContent = message;
-        errorContainer.style.display = 'block';
-        setTimeout(() => {
-            errorContainer.style.display = 'none';
-        }, 5000);
-    }
 
     // Sidebar toggle for all screen sizes
     menuToggle.addEventListener('click', () => {
@@ -45,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
         mainContent.style.marginLeft = '0';
     }
 
-    // Navigation to show only one section at a time
+    // Navigation to show only one section at a time, only for items with data-section
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const sectionId = item.getAttribute('data-section');
@@ -77,7 +65,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const profilePic = document.getElementById('profile-pic');
     const usernameDisplay = document.getElementById('username-display');
     const emailDisplay = document.getElementById('email-display');
-    const positionDisplay = document.getElementById('position-display');
 
     editProfileBtn.addEventListener('click', () => {
         usernameInput.classList.add('active');
@@ -86,7 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
         newFaceImageInput.style.display = 'block';
         usernameDisplay.style.display = 'none';
         emailDisplay.style.display = 'none';
-        positionDisplay.style.display = 'none';
         editProfileBtn.style.display = 'none';
         saveProfileBtn.style.display = 'block';
     });
@@ -99,10 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     saveProfileBtn.addEventListener('click', () => {
-        if (!usernameInput.value || !emailInput.value || !positionInput.value) {
-            showError('All fields are required.');
-            return;
-        }
         const formData = new FormData();
         formData.append('username', usernameInput.value);
         formData.append('email', emailInput.value);
@@ -111,36 +93,27 @@ document.addEventListener("DOMContentLoaded", function () {
             formData.append('face_image', newFaceImageInput.files[0]);
         }
         fetch('/update_profile', { method: 'POST', body: formData })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert('Profile updated successfully!');
                     usernameDisplay.textContent = usernameInput.value;
                     emailDisplay.textContent = emailInput.value;
-                    positionDisplay.textContent = positionInput.value;
                     usernameInput.classList.remove('active');
                     emailInput.classList.remove('active');
                     positionInput.classList.remove('active');
                     newFaceImageInput.style.display = 'none';
                     usernameDisplay.style.display = 'inline';
                     emailDisplay.style.display = 'inline';
-                    positionDisplay.style.display = 'inline';
                     editProfileBtn.style.display = 'block';
                     saveProfileBtn.style.display = 'none';
+                    // Reload to reflect changes
                     location.reload();
                 } else {
-                    showError(data.message);
+                    alert(data.message);
                 }
             })
-            .catch(error => {
-                console.error('Error updating profile:', error);
-                showError('Failed to update profile. Please try again.');
-            });
+            .catch(error => console.error('Error updating profile:', error));
     });
 
     // Manage Users Edit
@@ -164,34 +137,22 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-user-id');
             const row = document.getElementById(`user-${userId}`);
-            const usernameInput = row.querySelector('.username-input');
-            const emailInput = row.querySelector('.email-input');
-            const positionInput = row.querySelector('.position-input');
-            const faceImageInput = row.querySelector('.face-image-input');
-            if (!usernameInput.value || !emailInput.value || !positionInput.value) {
-                showError('All fields are required.');
-                return;
-            }
             const formData = new FormData();
-            formData.append('username', usernameInput.value);
-            formData.append('email', emailInput.value);
-            formData.append('position', positionInput.value);
+            formData.append('username', row.querySelector('.username-input').value);
+            formData.append('email', row.querySelector('.email-input').value);
+            formData.append('position', row.querySelector('.position-input').value);
+            const faceImageInput = row.querySelector('.face-image-input');
             if (faceImageInput.files[0]) {
                 formData.append('face_image', faceImageInput.files[0]);
             }
             fetch(`/admin_update_user/${userId}`, { method: 'POST', body: formData })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         alert('User updated successfully!');
-                        row.querySelector('.username-display').textContent = usernameInput.value;
-                        row.querySelector('.email-display').textContent = emailInput.value;
-                        row.querySelector('.position-display').textContent = positionInput.value;
+                        row.querySelector('.username-display').textContent = row.querySelector('.username-input').value;
+                        row.querySelector('.email-display').textContent = row.querySelector('.email-input').value;
+                        row.querySelector('.position-display').textContent = row.querySelector('.position-input').value;
                         if (faceImageInput.files[0]) {
                             row.querySelector('.user-pic').src = URL.createObjectURL(faceImageInput.files[0]);
                         }
@@ -205,13 +166,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         btn.style.display = 'none';
                         row.querySelector('.edit-user-btn').style.display = 'block';
                     } else {
-                        showError(data.message);
+                        alert(data.message);
                     }
                 })
-                .catch(error => {
-                    console.error('Error updating user:', error);
-                    showError('Failed to update user. Please try again.');
-                });
+                .catch(error => console.error('Error updating user:', error));
         });
     });
 
@@ -219,37 +177,29 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('upload-rota-btn').addEventListener('click', () => {
         const fileInput = document.getElementById('rota-image');
         if (!fileInput.files[0]) {
-            showError('Please select a file to upload.');
+            alert('Please select a file to upload.');
             return;
         }
         const formData = new FormData();
         formData.append('rota_image', fileInput.files[0]);
         fetch('/upload_rota', { method: 'POST', body: formData })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert('Rota uploaded successfully!');
                     location.reload();
                 } else {
-                    showError(data.message);
+                    alert(data.message);
                 }
             })
-            .catch(error => {
-                console.error('Error uploading rota:', error);
-                showError('Failed to upload rota. Please try again.');
-            });
+            .catch(error => console.error('Error uploading rota:', error));
     });
 
     // Send Notification
     document.getElementById('send-notification-btn').addEventListener('click', () => {
         const message = document.getElementById('notification-message').value;
         if (!message.trim()) {
-            showError('Please enter a notification message.');
+            alert('Please enter a notification message.');
             return;
         }
         fetch('/send_notification', {
@@ -257,24 +207,16 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `message=${encodeURIComponent(message)}`
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert('Notification sent successfully!');
                     document.getElementById('notification-message').value = '';
                 } else {
-                    showError(data.message);
+                    alert(data.message);
                 }
             })
-            .catch(error => {
-                console.error('Error sending notification:', error);
-                showError('Failed to send notification. Please try again.');
-            });
+            .catch(error => console.error('Error sending notification:', error));
     });
 
     // Approve/Reject Attendance
@@ -287,49 +229,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `status=${status}`
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         alert('Attendance status updated!');
                         location.reload();
                     } else {
-                        showError(data.message);
+                        alert(data.message);
                     }
                 })
-                .catch(error => {
-                    console.error('Error updating attendance:', error);
-                    showError('Failed to update attendance status. Please try again.');
-                });
+                .catch(error => console.error('Error updating attendance:', error));
         });
     });
 
-    // Search bar functionality for users and attendance
+    // Search bar functionality
     const searchInput = document.querySelector('.search-bar input[name="search"]');
     if (searchInput) {
         searchInput.addEventListener("input", function () {
             const query = this.value.toLowerCase().trim();
             const userRows = document.querySelectorAll('#users table tbody tr');
-            const attendanceRows = document.querySelectorAll('#attendance table tbody tr');
-            const dashboardRows = document.querySelectorAll('#dashboard table tbody tr');
 
             userRows.forEach(row => {
-                const username = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-                row.style.display = username.includes(query) ? '' : 'none';
-            });
-
-            attendanceRows.forEach(row => {
-                const username = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
-                row.style.display = username.includes(query) ? '' : 'none';
-            });
-
-            dashboardRows.forEach(row => {
-                const username = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
-                row.style.display = username.includes(query) ? '' : 'none';
+                const usernameCell = row.querySelector('td:nth-child(2)'); // Username is 2nd column
+                if (usernameCell) {
+                    const username = usernameCell.textContent.toLowerCase();
+                    const match = username.includes(query);
+                    row.style.display = match ? "" : "none";
+                }
             });
         });
     }

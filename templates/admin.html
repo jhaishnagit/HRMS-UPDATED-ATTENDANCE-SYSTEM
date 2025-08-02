@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Attendance System</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/logo.jpeg') }}" type="image/png">
+    <link rel="icon" href="../static/uploads/logo.jpeg" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="../static/css/admin.css">
 </head>
 <body>
     <div class="admin-wrapper">
@@ -22,19 +22,19 @@
                 </div>
                 {% else %}
                 <div class="profile-circle">
-                    <img id="profile-pic" src="{{ url_for('static', filename='images/default_profile.jpg') }}" alt="Admin Profile" onerror="this.src='https://via.placeholder.com/100';">
+                    <img id="profile-pic" src="{{ url_for('static', filename='default_profile.jpg') }}" alt="Admin Profile">
                 </div>
                 {% endif %}
                 <div class="profile-info">
                     <p><strong>Name:</strong> <span id="username-display">{{ admin_profile.username }}</span></p>
-                    <input type="text" id="username" name="username" value="{{ admin_profile.username }}" placeholder="Username" required>
+                    <input type="text" id="username" value="{{ admin_profile.username }}" placeholder="Username">
                     <p><strong>Email:</strong> <span id="email-display">{{ admin_profile.email }}</span></p>
-                    <input type="email" id="email" name="email" value="{{ admin_profile.email }}" placeholder="Email" required>
-                    <p><strong>Position:</strong> <span id="position-display">{{ admin_profile.position }}</span></p>
-                    <input type="text" id="position" name="position" value="{{ admin_profile.position }}" placeholder="Position" required>
-                    <input type="file" id="new-face-image" name="face_image" accept="image/*" style="display: none;">
+                    <input type="email" id="email" value="{{ admin_profile.email }}" placeholder="Email">
+                    <p><strong>Position:</strong> {{ admin_profile.position }}</p>
+                    <input type="text" id="position" value="{{ admin_profile.position }}" placeholder="Position">
+                    <input type="file" id="new-face-image" accept="image/*" style="display: none;">
                     <button id="edit-profile-btn">Edit Profile</button>
-                    <button id="save-profile-btn" style="display: none;">Save Changes</button>
+                    <button id="save-profile-btn">Save Changes</button>
                 </div>
             </div>
             <ul class="sidebar-nav">
@@ -46,7 +46,7 @@
                 <li data-section="read-notifications"><a><i class="fas fa-envelope-open"></i> Read Notifications</a></li>
                 <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i> New User</a></li>
                 <li><a href="{{ url_for('view_excel') }}"><i class="fas fa-table"></i> View Excel</a></li>
-                <li><a href="{{ url_for('export_page') }}"><i class="fas fa-download"></i> Export Data</a></li>
+                <li><a href="{{ url_for('export') }}"><a href="{{ url_for('export_page') }}"><i class="fas fa-download"></i> Export Data</a></li>
                 <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
@@ -69,7 +69,7 @@
                 <div class="card">
                     <h3>Attendance Overview</h3>
                     <div class="search-bar">
-                        <form method="GET" action="{{ url_for('admin') }}">
+                        <form method="GET" action="/admin">
                             <input type="text" name="search" placeholder="Search by username" value="{{ search_query }}">
                             <button type="submit">Search</button>
                         </form>
@@ -154,16 +154,16 @@
                             {% for user in users %}
                                 <tr id="user-{{ user.id }}">
                                     <td>{{ user.id }}</td>
-                                    <td><span class="username-display">{{ user.username }}</span><input type="text" class="username-input" name="username" value="{{ user.username }}" style="display: none;" required></td>
-                                    <td><span class="email-display">{{ user.email }}</span><input type="email" class="email-input" name="email" value="{{ user.email }}" style="display: none;" required></td>
-                                    <td><span class="position-display">{{ user.position }}</span><input type="text" class="position-input" name="position" value="{{ user.position }}" style="display: none;" required></td>
+                                    <td><span class="username-display">{{ user.username }}</span><input type="text" class="username-input" value="{{ user.username }}" style="display: none;"></td>
+                                    <td><span class="email-display">{{ user.email }}</span><input type="email" class="email-input" value="{{ user.email }}" style="display: none;"></td>
+                                    <td><span class="position-display">{{ user.position }}</span><input type="text" class="position-input" value="{{ user.position }}" style="display: none;"></td>
                                     <td>
                                         {% if user.face_image_base64 %}
                                             <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="User Image" class="user-pic">
-                                            <input type="file" class="face-image-input" name="face_image" accept="image/*" style="display: none;">
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
                                         {% else %}
-                                            <img src="{{ url_for('static', filename='images/default_profile.jpg') }}" alt="User Image" class="user-pic" onerror="this.src='https://via.placeholder.com/100';">
-                                            <input type="file" class="face-image-input" name="face_image" accept="image/*" style="display: none;">
+                                            N/A
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
                                         {% endif %}
                                     </td>
                                     <td>
@@ -227,7 +227,9 @@
                                     </tr>
                                 {% endfor %}
                             {% else %}
-                                <tr><td colspan="10">No records found.</td></tr>
+                                <tr>
+                                    <td colspan="10">No records found.</td>
+                                </tr>
                             {% endif %}
                         </tbody>
                     </table>
@@ -238,7 +240,7 @@
                 <div class="card">
                     <h3>Weekly Rota</h3>
                     <div class="rota-upload">
-                        <input type="file" id="rota-image" name="rota_image" accept="image/*">
+                        <input type="file" id="rota-image" accept="image/*">
                         <button id="upload-rota-btn" class="btn">Upload Rota</button>
                     </div>
                     {% if rota_image_base64 %}
@@ -255,7 +257,7 @@
                 <div class="card">
                     <h3>Send Notification to All Users</h3>
                     <div class="notification-form">
-                        <textarea id="notification-message" name="message" placeholder="Enter your message here" rows="4"></textarea>
+                        <textarea id="notification-message" placeholder="Enter your message here" rows="4"></textarea>
                         <button id="send-notification-btn">Send Notification</button>
                     </div>
                 </div>
@@ -292,6 +294,6 @@
             </section>
         </main>
     </div>
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script src="../static/js/admin.js"></script>
 </body>
 </html>
