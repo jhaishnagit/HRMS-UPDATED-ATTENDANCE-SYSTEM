@@ -1,52 +1,67 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const navItems = document.querySelectorAll('.sidebar-nav li[data-section]');
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navItems = document.querySelectorAll('.sidebar li[data-section]');
     const sections = document.querySelectorAll('.content-section');
-    const sidebar = document.getElementById('sidebar');
     const errorContainer = document.createElement('div');
-    errorContainer.className = 'alert alert-danger d-none';
+    errorContainer.className = 'error-message';
     document.querySelector('.flash-messages').appendChild(errorContainer);
 
     // Function to display errors
     function showError(message) {
         errorContainer.textContent = message;
-        errorContainer.classList.remove('d-none');
+        errorContainer.style.display = 'block';
         setTimeout(() => {
-            errorContainer.classList.add('d-none');
+            errorContainer.style.display = 'none';
         }, 5000);
     }
 
-    // Toggle sidebar for mobile
-    if (window.innerWidth < 992) {
-        sidebar.classList.add('offcanvas', 'offcanvas-start');
-        const toggleBtn = document.querySelector('.toggle-btn');
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.add('show');
-        });
-        const closeBtn = document.getElementById('close-btn');
-        closeBtn.classList.remove('d-none');
-        closeBtn.addEventListener('click', () => {
-            sidebar.classList.remove('show');
-        });
+    // Sidebar toggle for all screen sizes
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        mainContent.classList.toggle('expanded', isCollapsed);
+        mainContent.style.marginLeft = isCollapsed ? '0' : '280px';
+    });
+
+    // Close sidebar if clicked outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !menuToggle.contains(e.target) && !sidebar.classList.contains('collapsed')) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.remove('expanded');
+            mainContent.style.marginLeft = '0';
+        }
+    });
+
+    // Initialize sidebar state based on screen size
+    if (window.innerWidth > 768) {
+        sidebar.classList.remove('collapsed');
+        mainContent.classList.remove('expanded');
+        mainContent.style.marginLeft = '280px';
+    } else {
+        sidebar.classList.add('collapsed');
+        mainContent.classList.add('expanded');
+        mainContent.style.marginLeft = '0';
     }
 
-    // Navigation
+    // Navigation to show only one section at a time
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const sectionId = item.getAttribute('data-section');
             if (sectionId) {
                 e.preventDefault();
-                navItems.forEach(i => {
-                    i.classList.remove('active');
-                    i.querySelector('a').classList.remove('active');
-                });
+                navItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
-                item.querySelector('a').classList.add('active');
                 sections.forEach(section => section.classList.remove('active'));
                 const targetSection = document.getElementById(sectionId);
                 targetSection.classList.add('active');
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                if (window.innerWidth < 992) {
-                    sidebar.classList.remove('show');
+
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.remove('expanded');
+                    mainContent.style.marginLeft = '0';
                 }
             }
         });
@@ -293,10 +308,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Search bar functionality
+    // Search bar functionality for users and attendance
     const searchInput = document.querySelector('.search-bar input[name="search"]');
     if (searchInput) {
-        searchInput.addEventListener('input', function () {
+        searchInput.addEventListener("input", function () {
             const query = this.value.toLowerCase().trim();
             const userRows = document.querySelectorAll('#users table tbody tr');
             const attendanceRows = document.querySelectorAll('#attendance table tbody tr');
