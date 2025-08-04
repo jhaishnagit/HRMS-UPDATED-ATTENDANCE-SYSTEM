@@ -4,56 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Attendance System</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/logo.jpeg') }}" type="image/png">
+    <link rel="icon" href="../static/uploads/logo.jpeg" type="image/png">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="../static/css/admin.css">
 </head>
 <body>
-    <div class="admin-wrapper">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h2>Admin Dashboard</h2>
+    <div class="container-fluid">
+        <!-- Sidebar (Fixed for PC, Offcanvas for mobile) -->
+        <nav class="sidebar-pc" id="sidebar" data-bs-backdrop="false">
+            <div class="offcanvas-header">
+                <h2 class="offcanvas-title" id="sidebarLabel">Admin Dashboard</h2>
+                <button type="button" class="btn-close btn-close-white d-none" data-bs-dismiss="offcanvas" aria-label="Close" id="close-btn"></button>
             </div>
-            <div class="profile-section">
-                {% if admin_profile.face_image_base64 %}
-                <div class="profile-circle">
-                    <img id="profile-pic" src="data:image/jpeg;base64,{{ admin_profile.face_image_base64 }}" alt="Admin Profile">
+            <div class="offcanvas-body">
+                <div class="profile-section">
+                    {% if admin_profile.face_image_base64 %}
+                    <div class="profile-circle">
+                        <img id="profile-pic" src="data:image/jpeg;base64,{{ admin_profile.face_image_base64 }}" alt="Admin Profile">
+                    </div>
+                    {% else %}
+                    <div class="profile-circle">
+                        <img id="profile-pic" src="{{ url_for('static', filename='default_profile.jpg') }}" alt="Admin Profile">
+                    </div>
+                    {% endif %}
+                    <div class="profile-info">
+                        <p><strong>Name:</strong> <span id="username-display">{{ admin_profile.username }}</span></p>
+                        <input type="text" id="username" value="{{ admin_profile.username }}" placeholder="Username">
+                        <p><strong>Email:</strong> <span id="email-display">{{ admin_profile.email }}</span></p>
+                        <input type="email" id="email" value="{{ admin_profile.email }}" placeholder="Email">
+                        <p><strong>Position:</strong> <span id="position-display">{{ admin_profile.position }}</span></p>
+                        <input type="text" id="position" value="{{ admin_profile.position }}" placeholder="Position">
+                        <input type="file" id="new-face-image" accept="image/*" style="display: none;">
+                        <button id="edit-profile-btn">Edit Profile</button>
+                        <button id="save-profile-btn" style="display: none;">Save Changes</button>
+                    </div>
                 </div>
-                {% else %}
-                <div class="profile-circle">
-                    <img id="profile-pic" src="{{ url_for('static', filename='images/default_profile.jpg') }}" alt="Admin Profile" onerror="this.src='https://via.placeholder.com/100';">
-                </div>
-                {% endif %}
-                <div class="profile-info">
-                    <p><strong>Name:</strong> <span id="username-display">{{ admin_profile.username }}</span></p>
-                    <input type="text" id="username" name="username" value="{{ admin_profile.username }}" placeholder="Username" required>
-                    <p><strong>Email:</strong> <span id="email-display">{{ admin_profile.email }}</span></p>
-                    <input type="email" id="email" name="email" value="{{ admin_profile.email }}" placeholder="Email" required>
-                    <p><strong>Position:</strong> <span id="position-display">{{ admin_profile.position }}</span></p>
-                    <input type="text" id="position" name="position" value="{{ admin_profile.position }}" placeholder="Position" required>
-                    <input type="file" id="new-face-image" name="face_image" accept="image/*" style="display: none;">
-                    <button id="edit-profile-btn">Edit Profile</button>
-                    <button id="save-profile-btn" style="display: none;">Save Changes</button>
-                </div>
+                <ul class="sidebar-nav">
+                    <li data-section="dashboard" class="active"><a href="#" class="active"><i class="fas fa-home"></i> <span class="sidebar-text">Dashboard</span></a></li>
+                    <li data-section="users"><a href="#"><i class="fas fa-users"></i> <span class="sidebar-text">Manage Users</span></a></li>
+                    <li data-section="attendance"><a href="#"><i class="fas fa-clock"></i> <span class="sidebar-text">Attendance Records</span></a></li>
+                    <li data-section="weekly-rota"><a href="#"><i class="fas fa-calendar-week"></i> <span class="sidebar-text">Weekly Rota</span></a></li>
+                    <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span class="sidebar-text">Send Notification</span></a></li>
+                    <li data-section="read-notifications"><a href="#"><i class="fas fa-envelope-open"></i> <span class="sidebar-text">Read Notifications</span></a></li>
+                    <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i> <span class="sidebar-text">New User</span></a></li>
+                    <li><a href="{{ url_for('view_excel') }}"><i class="fas fa-table"></i> <span class="sidebar-text">View Excel</span></a></li>
+                    <li><a href="{{ url_for('export_page') }}"><i class="fas fa-download"></i> <span class="sidebar-text">Export Data</span></a></li>
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> <span class="sidebar-text">Logout</span></a></li>
+                </ul>
             </div>
-            <ul class="sidebar-nav">
-                <li data-section="dashboard" class="active"><a><i class="fas fa-home"></i> Dashboard</a></li>
-                <li data-section="users"><a><i class="fas fa-users"></i> Manage Users</a></li>
-                <li data-section="attendance"><a><i class="fas fa-clock"></i> Attendance Records</a></li>
-                <li data-section="weekly-rota"><a><i class="fas fa-calendar-week"></i> Weekly Rota</a></li>
-                <li data-section="notifications"><a><i class="fas fa-bell"></i> Send Notification</a></li>
-                <li data-section="read-notifications"><a><i class="fas fa-envelope-open"></i> Read Notifications</a></li>
-                <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i> New User</a></li>
-                <li><a href="{{ url_for('view_excel') }}"><i class="fas fa-table"></i> View Excel</a></li>
-                <li><a href="{{ url_for('export_page') }}"><i class="fas fa-download"></i> Export Data</a></li>
-                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
         </nav>
         <main class="main-content">
             <div class="header">
-                <h1>Admin Dashboard</h1>
-                <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                <h1>Welcome, {{ session.username }}</h1>
+                <button class="toggle-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar"><i class="fas fa-bars"></i></button>
             </div>
             <div class="flash-messages">
                 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -70,7 +78,7 @@
                     <h3>Attendance Overview</h3>
                     <div class="search-bar">
                         <form method="GET" action="{{ url_for('admin') }}">
-                            <input type="text" name="search" placeholder="Search by username" value="{{ search_query }}">
+                            <input type="text" name="search" placeholder="Search by username" value="{{ search_query|default('') }}">
                             <button type="submit">Search</button>
                         </form>
                     </div>
@@ -82,7 +90,7 @@
                             <a href="{{ url_for('admin', view='yearly') }}" {% if view == 'yearly' %}style="font-weight: bold;"{% endif %}>Yearly</a>
                         </span>
                     </p>
-                    <table>
+                    <table class="table table-bordered">
                         <thead>
                             <tr>
                                 <th>Username</th>
@@ -119,12 +127,12 @@
                                                 N/A
                                             {% endif %}
                                         </td>
-                                        <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
+                                        <td class="hours-{{ record.color|default('red') }}">{{ record.hours_worked }}</td>
                                         <td>{{ 'Submitted' if record.daily_status_submitted else 'Not Submitted' }}</td>
                                         <td>{{ record.attendance_status }}</td>
                                         <td>
-                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
-                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
+                                            <button class="approve-btn btn btn-success btn-sm" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
+                                            <button class="reject-btn btn btn-danger btn-sm" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -139,7 +147,7 @@
             <section class="content-section" id="users">
                 <div class="card">
                     <h3>Manage Users</h3>
-                    <table>
+                    <table class="table table-bordered">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -154,21 +162,30 @@
                             {% for user in users %}
                                 <tr id="user-{{ user.id }}">
                                     <td>{{ user.id }}</td>
-                                    <td><span class="username-display">{{ user.username }}</span><input type="text" class="username-input" name="username" value="{{ user.username }}" style="display: none;" required></td>
-                                    <td><span class="email-display">{{ user.email }}</span><input type="email" class="email-input" name="email" value="{{ user.email }}" style="display: none;" required></td>
-                                    <td><span class="position-display">{{ user.position }}</span><input type="text" class="position-input" name="position" value="{{ user.position }}" style="display: none;" required></td>
+                                    <td>
+                                        <span class="username-display">{{ user.username }}</span>
+                                        <input type="text" class="username-input" value="{{ user.username }}" style="display: none;" required>
+                                    </td>
+                                    <td>
+                                        <span class="email-display">{{ user.email }}</span>
+                                        <input type="email" class="email-input" value="{{ user.email }}" style="display: none;" required>
+                                    </td>
+                                    <td>
+                                        <span class="position-display">{{ user.position }}</span>
+                                        <input type="text" class="position-input" value="{{ user.position }}" style="display: none;" required>
+                                    </td>
                                     <td>
                                         {% if user.face_image_base64 %}
-                                            <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="User Image" class="user-pic">
-                                            <input type="file" class="face-image-input" name="face_image" accept="image/*" style="display: none;">
+                                            <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="User Image" class="user-pic" style="width: 50px; height: 50px;">
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
                                         {% else %}
-                                            <img src="{{ url_for('static', filename='images/default_profile.jpg') }}" alt="User Image" class="user-pic" onerror="this.src='https://via.placeholder.com/100';">
-                                            <input type="file" class="face-image-input" name="face_image" accept="image/*" style="display: none;">
+                                            N/A
+                                            <input type="file" class="face-image-input" accept="image/*" style="display: none;">
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button class="edit-user-btn" data-user-id="{{ user.id }}">Edit</button>
-                                        <button class="save-user-btn" data-user-id="{{ user.id }}" style="display: none;">Save</button>
+                                        <button class="edit-user-btn btn btn-primary btn-sm" data-user-id="{{ user.id }}">Edit</button>
+                                        <button class="save-user-btn btn btn-success btn-sm" data-user-id="{{ user.id }}" style="display: none;">Save</button>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -180,7 +197,7 @@
             <section class="content-section" id="attendance">
                 <div class="card">
                     <h3>All Attendance Records</h3>
-                    <table>
+                    <table class="table table-bordered">
                         <thead>
                             <tr>
                                 <th>Username</th>
@@ -217,12 +234,12 @@
                                                 N/A
                                             {% endif %}
                                         </td>
-                                        <td class="hours-{{ record.color }}">{{ record.hours_worked }}</td>
+                                        <td class="hours-{{ record.color|default('red') }}">{{ record.hours_worked }}</td>
                                         <td>{{ 'Submitted' if record.daily_status_submitted else 'Not Submitted' }}</td>
                                         <td>{{ record.attendance_status }}</td>
                                         <td>
-                                            <button class="approve-btn" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
-                                            <button class="reject-btn" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
+                                            <button class="approve-btn btn btn-success btn-sm" data-attendance-id="{{ record.attendance_id }}">Mark Present</button>
+                                            <button class="reject-btn btn btn-danger btn-sm" data-attendance-id="{{ record.attendance_id }}">Mark Absent</button>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -238,13 +255,13 @@
                 <div class="card">
                     <h3>Weekly Rota</h3>
                     <div class="rota-upload">
-                        <input type="file" id="rota-image" name="rota_image" accept="image/*">
-                        <button id="upload-rota-btn" class="btn">Upload Rota</button>
+                        <input type="file" id="rota-image" accept="image/*">
+                        <button id="upload-rota-btn" class="btn btn-primary">Upload Rota</button>
                     </div>
                     {% if rota_image_base64 %}
                         <p><strong>Current Weekly Rota:</strong></p>
                         <img src="data:image/jpeg;base64,{{ rota_image_base64 }}" alt="Weekly Rota" class="rota-image">
-                        <a href="data:image/jpeg;base64,{{ rota_image_base64 }}" download="weekly_rota.jpg">Download Weekly Rota</a>
+                        <a href="data:image/jpeg;base64,{{ rota_image_base64 }}" download="weekly_rota.jpg" class="btn btn-link">Download Weekly Rota</a>
                     {% else %}
                         <p>No weekly rota uploaded yet.</p>
                     {% endif %}
@@ -255,8 +272,8 @@
                 <div class="card">
                     <h3>Send Notification to All Users</h3>
                     <div class="notification-form">
-                        <textarea id="notification-message" name="message" placeholder="Enter your message here" rows="4"></textarea>
-                        <button id="send-notification-btn">Send Notification</button>
+                        <textarea id="notification-message" placeholder="Enter your message here" rows="4" class="form-control"></textarea>
+                        <button id="send-notification-btn" class="btn btn-primary mt-2">Send Notification</button>
                     </div>
                 </div>
             </section>
@@ -264,7 +281,7 @@
             <section class="content-section" id="read-notifications">
                 <div class="card">
                     <h3>Read Notifications Report</h3>
-                    <table>
+                    <table class="table table-bordered">
                         <thead>
                             <tr>
                                 <th>Username</th>
@@ -292,6 +309,9 @@
             </section>
         </main>
     </div>
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="../static/js/admin.js"></script>
 </body>
-</html> 
+</html>
