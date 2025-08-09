@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Attendance System</title>
-    <link rel="icon" href="../static/uploads/logo.jpeg" type="image/png">
+    <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../static/css/admin.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
     <div class="container-fluid">
         <!-- Sidebar (Fixed for PC, Offcanvas for mobile) -->
-        <nav class="sidebar-pc" id="sidebar" data-bs-backdrop="false">
+        <nav class="sidebar" id="sidebar" data-bs-backdrop="false">
             <div class="offcanvas-header">
                 <h2 class="offcanvas-title" id="sidebarLabel">Admin Dashboard</h2>
                 <button type="button" class="btn-close btn-close-white d-none" data-bs-dismiss="offcanvas" aria-label="Close" id="close-btn"></button>
@@ -61,7 +61,7 @@
         <main class="main-content">
             <div class="header">
                 <h1>Welcome, {{ session.username }}</h1>
-                <button class="toggle-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar"><i class="fas fa-bars"></i></button>
+                <button class="menu-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar"><i class="fas fa-bars"></i></button>
             </div>
             <div class="flash-messages">
                 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -312,6 +312,6 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="../static/js/admin.js"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>
