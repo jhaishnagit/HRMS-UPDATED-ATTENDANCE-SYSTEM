@@ -122,6 +122,14 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
+
+            # Add missing columns if they don't exist
+            try:
+                cursor.execute("ALTER TABLE notifications ADD COLUMN read_at TIMESTAMP NULL")
+            except mysql.connector.Error as err:
+                if err.errno != 1060:  # Ignore if column already exists
+                    raise
+
             conn.commit()
             logging.info("✅ Database schema initialized successfully")
         except Error as err:
