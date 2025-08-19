@@ -1,67 +1,38 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const sidebar = document.querySelector('.sidebar');
-    const mainContent = document.querySelector('.main-content');
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navItems = document.querySelectorAll('.sidebar li[data-section]');
+    const navItems = document.querySelectorAll('.sidebar-nav li[data-section]');
     const sections = document.querySelectorAll('.content-section');
-    const errorContainer = document.createElement('div');
-    errorContainer.className = 'error-message';
-    document.querySelector('.flash-messages').appendChild(errorContainer);
+    const sidebar = document.getElementById('sidebar');
 
-    // Function to display errors
-    function showError(message) {
-        errorContainer.textContent = message;
-        errorContainer.style.display = 'block';
-        setTimeout(() => {
-            errorContainer.style.display = 'none';
-        }, 5000);
+    // Toggle sidebar for mobile
+    if (window.innerWidth < 992) {
+        sidebar.classList.add('offcanvas', 'offcanvas-start');
+        const toggleBtn = document.querySelector('.toggle-btn');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.add('show');
+        });
+        const closeBtn = document.getElementById('close-btn');
+        closeBtn.classList.remove('d-none');
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.remove('show');
+        });
     }
 
-    // Sidebar toggle for all screen sizes
-    menuToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        mainContent.classList.toggle('expanded', isCollapsed);
-        mainContent.style.marginLeft = isCollapsed ? '0' : '280px';
-    });
-
-    // Close sidebar if clicked outside on mobile
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !menuToggle.contains(e.target) && !sidebar.classList.contains('collapsed')) {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.remove('expanded');
-            mainContent.style.marginLeft = '0';
-        }
-    });
-
-    // Initialize sidebar state based on screen size
-    if (window.innerWidth > 768) {
-        sidebar.classList.remove('collapsed');
-        mainContent.classList.remove('expanded');
-        mainContent.style.marginLeft = '280px';
-    } else {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('expanded');
-        mainContent.style.marginLeft = '0';
-    }
-
-    // Navigation to show only one section at a time
+    // Navigation
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
+            e.preventDefault();
             const sectionId = item.getAttribute('data-section');
             if (sectionId) {
-                e.preventDefault();
-                navItems.forEach(i => i.classList.remove('active'));
+                navItems.forEach(i => {
+                    i.classList.remove('active');
+                    i.querySelector('a').classList.remove('active');
+                });
                 item.classList.add('active');
+                item.querySelector('a').classList.add('active');
                 sections.forEach(section => section.classList.remove('active'));
-                const targetSection = document.getElementById(sectionId);
-                targetSection.classList.add('active');
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.add('collapsed');
-                    mainContent.classList.remove('expanded');
-                    mainContent.style.marginLeft = '0';
+                document.getElementById(sectionId).classList.add('active');
+                if (window.innerWidth < 992) {
+                    sidebar.classList.remove('show');
                 }
             }
         });
@@ -80,9 +51,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const positionDisplay = document.getElementById('position-display');
 
     editProfileBtn.addEventListener('click', () => {
-        usernameInput.classList.add('active');
-        emailInput.classList.add('active');
-        positionInput.classList.add('active');
+        usernameInput.style.display = 'block';
+        emailInput.style.display = 'block';
+        positionInput.style.display = 'block';
         newFaceImageInput.style.display = 'block';
         usernameDisplay.style.display = 'none';
         emailDisplay.style.display = 'none';
@@ -100,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveProfileBtn.addEventListener('click', () => {
         if (!usernameInput.value || !emailInput.value || !positionInput.value) {
-            showError('All fields are required.');
+            alert('All fields are required.');
             return;
         }
         const formData = new FormData();
@@ -111,21 +82,16 @@ document.addEventListener("DOMContentLoaded", function () {
             formData.append('face_image', newFaceImageInput.files[0]);
         }
         fetch('/update_profile', { method: 'POST', body: formData })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert('Profile updated successfully!');
                     usernameDisplay.textContent = usernameInput.value;
                     emailDisplay.textContent = emailInput.value;
                     positionDisplay.textContent = positionInput.value;
-                    usernameInput.classList.remove('active');
-                    emailInput.classList.remove('active');
-                    positionInput.classList.remove('active');
+                    usernameInput.style.display = 'none';
+                    emailInput.style.display = 'none';
+                    positionInput.style.display = 'none';
                     newFaceImageInput.style.display = 'none';
                     usernameDisplay.style.display = 'inline';
                     emailDisplay.style.display = 'inline';
@@ -134,17 +100,41 @@ document.addEventListener("DOMContentLoaded", function () {
                     saveProfileBtn.style.display = 'none';
                     location.reload();
                 } else {
-                    showError(data.message);
+                    alert(data.message);
                 }
             })
             .catch(error => {
                 console.error('Error updating profile:', error);
-                showError('Failed to update profile. Please try again.');
+                alert('Failed to update profile. Please try again.');
             });
     });
 
-    // Manage Users Edit
-    document.querySelectorAll('.edit-user-btn').forEach(btn => {
+    // Update Attendance Status
+    const updateForms = document.querySelectorAll('.update-status-form');
+    updateForms.forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const attendanceId = form.getAttribute('data-attendance-id');
+            const status = form.querySelector('select[name="status"]').value;
+            const formData = new FormData();
+            formData.append('status', status);
+            fetch(`/update_attendance_status/${attendanceId}`, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Attendance status updated successfully!');
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error updating status:', error));
+        });
+    });
+
+    // Update User
+    const editUserBtns = document.querySelectorAll('.edit-user-btn');
+    editUserBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-user-id');
             const row = document.getElementById(`user-${userId}`);
@@ -160,7 +150,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    document.querySelectorAll('.save-user-btn').forEach(btn => {
+    const saveUserBtns = document.querySelectorAll('.save-user-btn');
+    saveUserBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-user-id');
             const row = document.getElementById(`user-${userId}`);
@@ -169,7 +160,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const positionInput = row.querySelector('.position-input');
             const faceImageInput = row.querySelector('.face-image-input');
             if (!usernameInput.value || !emailInput.value || !positionInput.value) {
-                showError('All fields are required.');
+                alert('All fields are required.');
                 return;
             }
             const formData = new FormData();
@@ -180,12 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 formData.append('face_image', faceImageInput.files[0]);
             }
             fetch(`/admin_update_user/${userId}`, { method: 'POST', body: formData })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         alert('User updated successfully!');
@@ -205,120 +191,67 @@ document.addEventListener("DOMContentLoaded", function () {
                         btn.style.display = 'none';
                         row.querySelector('.edit-user-btn').style.display = 'block';
                     } else {
-                        showError(data.message);
+                        alert(data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error updating user:', error);
-                    showError('Failed to update user. Please try again.');
+                    alert('Failed to update user. Please try again.');
                 });
         });
     });
 
-    // Rota Upload
-    document.getElementById('upload-rota-btn').addEventListener('click', () => {
-        const fileInput = document.getElementById('rota-image');
-        if (!fileInput.files[0]) {
-            showError('Please select a file to upload.');
-            return;
-        }
-        const formData = new FormData();
-        formData.append('rota_image', fileInput.files[0]);
-        fetch('/upload_rota', { method: 'POST', body: formData })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert('Rota uploaded successfully!');
-                    location.reload();
-                } else {
-                    showError(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error uploading rota:', error);
-                showError('Failed to upload rota. Please try again.');
-            });
-    });
-
-    // Send Notification
-    document.getElementById('send-notification-btn').addEventListener('click', () => {
-        const message = document.getElementById('notification-message').value;
-        if (!message.trim()) {
-            showError('Please enter a notification message.');
-            return;
-        }
-        fetch('/send_notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `message=${encodeURIComponent(message)}`
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert('Notification sent successfully!');
-                    document.getElementById('notification-message').value = '';
-                } else {
-                    showError(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error sending notification:', error);
-                showError('Failed to send notification. Please try again.');
-            });
-    });
-
-    // Approve/Reject Attendance
-    document.querySelectorAll('.approve-btn, .reject-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const attendanceId = btn.getAttribute('data-attendance-id');
-            const status = btn.classList.contains('approve-btn') ? 'Present' : 'Absent';
-            fetch(`/update_attendance_status/${attendanceId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `status=${status}`
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+    // Upload Rota
+    const uploadRotaForm = document.getElementById('upload-rota-form');
+    if (uploadRotaForm) {
+        uploadRotaForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(uploadRotaForm);
+            fetch('/upload_rota', { method: 'POST', body: formData })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Attendance status updated!');
+                        alert('Rota uploaded successfully!');
                         location.reload();
                     } else {
-                        showError(data.message);
+                        alert(data.message);
                     }
                 })
-                .catch(error => {
-                    console.error('Error updating attendance:', error);
-                    showError('Failed to update attendance status. Please try again.');
-                });
+                .catch(error => console.error('Error uploading rota:', error));
         });
-    });
+    }
 
-    // Search bar functionality for users and attendance
-    const searchInput = document.querySelector('.search-bar input[name="search"]');
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
+    // Send Notification
+    const sendNotificationForm = document.getElementById('send-notification-form');
+    if (sendNotificationForm) {
+        sendNotificationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(sendNotificationForm);
+            fetch('/send_notification', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Notification sent successfully!');
+                        sendNotificationForm.reset();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error sending notification:', error));
+        });
+    }
+
+    // Search Functionality
+    const searchInputs = document.querySelectorAll('.search-form input[name="search"]');
+    searchInputs.forEach(input => {
+        input.addEventListener('input', function () {
             const query = this.value.toLowerCase().trim();
             const userRows = document.querySelectorAll('#users table tbody tr');
             const attendanceRows = document.querySelectorAll('#attendance table tbody tr');
             const dashboardRows = document.querySelectorAll('#dashboard table tbody tr');
 
             userRows.forEach(row => {
-                const username = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                const username = row.querySelector('td:nth-child(2) .username-display')?.textContent.toLowerCase() || '';
                 row.style.display = username.includes(query) ? '' : 'none';
             });
 
@@ -332,5 +265,5 @@ document.addEventListener("DOMContentLoaded", function () {
                 row.style.display = username.includes(query) ? '' : 'none';
             });
         });
-    }
+    });
 });
