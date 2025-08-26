@@ -132,35 +132,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (captureLoginBtn) {
         captureLoginBtn.addEventListener('click', () => {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const latitude = position.coords.latitude;
-                const longitude = position.coords.longitude;
-
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                canvas.toBlob(blob => {
-                    const formData = new FormData();
-                    formData.append('face_image', blob, 'capture.jpg');
-                    formData.append('latitude', latitude);
-                    formData.append('longitude', longitude);
-                    fetch('/login_photo', { method: 'POST', body: formData })
-                        .then(response => response.json())
-                        .then(data => {
-                            stopCameraBtn.click();
-                            if (data.success) {
-                                const loginTime = new Date().toLocaleString();
-                                alert(`Login Successful! Time: ${loginTime}\nAttendance Submitted\nPhoto: ${data.login_photo}`);
-                                location.reload();
-                            } else {
-                                alert(data.message);
-                            }
-                        })
-                        .catch(error => console.error('Error capturing login:', error));
-                }, 'image/jpeg');
-            }, (error) => {
-                alert('Error accessing location: ' + error.message + '. Please enable location access.');
-            }, { enableHighAccuracy: true });
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('face_image', blob, 'capture.jpg');
+                fetch('/login_photo', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        stopCameraBtn.click();
+                        if (data.success) {
+                            const loginTime = new Date().toLocaleString();
+                            alert(`Login Successful! Time: ${loginTime}\nAttendance Submitted\nPhoto: ${data.login_photo}`);
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error capturing login:', error));
+            }, 'image/jpeg');
         });
     }
 
@@ -191,35 +182,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (captureLogoutBtn) {
         captureLogoutBtn.addEventListener('click', () => {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const latitude = position.coords.latitude;
-                const longitude = position.coords.longitude;
-
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                canvas.toBlob(blob => {
-                    const formData = new FormData();
-                    formData.append('face_image', blob, 'capture.jpg');
-                    formData.append('latitude', latitude);
-                    formData.append('longitude', longitude);
-                    fetch('/logout_photo', { method: 'POST', body: formData })
-                        .then(response => response.json())
-                        .then(data => {
-                            stopCameraBtn.click();
-                            if (data.success) {
-                                const logoutTime = new Date().toLocaleString();
-                                alert(`Logout Successful! Time: ${logoutTime}\nAttendance Submitted\nPhoto: ${data.logout_photo}`);
-                                location.reload();
-                            } else {
-                                alert(data.message);
-                            }
-                        })
-                        .catch(error => console.error('Error capturing logout:', error));
-                }, 'image/jpeg');
-            }, (error) => {
-                alert('Error accessing location: ' + error.message + '. Please enable location access.');
-            }, { enableHighAccuracy: true });
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('face_image', blob, 'capture.jpg');
+                fetch('/logout_photo', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        stopCameraBtn.click();
+                        if (data.success) {
+                            const logoutTime = new Date().toLocaleString();
+                            alert(`Logout Successful! Time: ${logoutTime}\nAttendance Submitted\nPhoto: ${data.logout_photo}`);
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error capturing logout:', error));
+            }, 'image/jpeg');
         });
     }
 
