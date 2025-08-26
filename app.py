@@ -463,21 +463,9 @@ def login_photo():
         return jsonify({"success": False, "message": "Not logged in"})
 
     file = request.files.get('face_image')
-    latitude = request.form.get('latitude')
-    longitude = request.form.get('longitude')
     if not file:
         logging.error("❌ No photo uploaded for login_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
-    if not latitude or not longitude:
-        logging.error("❌ No location provided for login_photo")
-        return jsonify({"success": False, "message": "Location access required"})
-
-    try:
-        latitude = float(latitude)
-        longitude = float(longitude)
-    except ValueError:
-        logging.error("❌ Invalid location data for login_photo")
-        return jsonify({"success": False, "message": "Invalid location data"})
 
     conn = get_db_connection()
     if not conn:
@@ -510,6 +498,8 @@ def login_photo():
         file.save(login_photo_path)
         logging.info(f"🖼️ Login photo saved: {login_photo_path}")
 
+        g = geocoder.ip('me')
+        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
         logging.info(f"📍 Login location: ({latitude}, {longitude})")
 
         cursor.execute("""
@@ -581,21 +571,9 @@ def logout_photo():
         return jsonify({"success": False, "message": "Not logged in"})
 
     file = request.files.get('face_image')
-    latitude = request.form.get('latitude')
-    longitude = request.form.get('longitude')
     if not file:
         logging.error("❌ No photo uploaded for logout_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
-    if not latitude or not longitude:
-        logging.error("❌ No location provided for logout_photo")
-        return jsonify({"success": False, "message": "Location access required"})
-
-    try:
-        latitude = float(latitude)
-        longitude = float(longitude)
-    except ValueError:
-        logging.error("❌ Invalid location data for logout_photo")
-        return jsonify({"success": False, "message": "Invalid location data"})
 
     conn = get_db_connection()
     if not conn:
@@ -635,6 +613,8 @@ def logout_photo():
         file.save(logout_photo_path)
         logging.info(f"🖼️ Logout photo saved: {logout_photo_path}")
 
+        g = geocoder.ip('me')
+        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
         logging.info(f"📍 Logout location: ({latitude}, {longitude})")
 
         cursor.execute("""
