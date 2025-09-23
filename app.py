@@ -4,7 +4,6 @@ import mysql.connector
 from mysql.connector import Error
 import os
 import cv2
-import geocoder
 import pandas as pd
 from io import BytesIO
 from datetime import datetime, timedelta
@@ -139,19 +138,15 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        login_type = request.form.get('login_type')
-        logging.info(f"🔐 Login attempt: email={email}, login_type={login_type}")
+        logging.info(f"🔐 Login attempt: email={email}")
 
         if not email or not password:
-            flash("Email and password are required", "error")
-            logging.error("❌ Missing email or password")
-            return render_template('login.html')
+            return jsonify({"success": False, "message": "Email and password are required"})
 
         conn = get_db_connection()
         if not conn:
-            flash("Database connection failed", "error")
-            logging.error("❌ Failed to get DB connection")
-            return render_template('login.html')
+            return jsonify({"success": False, "message": "Database connection failed"})
+
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
@@ -160,17 +155,15 @@ def login():
             if user and check_password_hash(user['password'], password):
                 session['user_id'] = user['id']
                 session['username'] = user['username']
-                session['is_admin'] = user['is_admin'] if login_type == 'admin' else False
+                session['is_admin'] = user['is_admin']
                 session.permanent = True
                 logging.info(f"🔐 Session after login: {dict(session)}")
-                flash("Login successful!", "success")
-                return redirect(url_for('admin' if session['is_admin'] else 'dashboard'))
+                return jsonify({"success": True, "is_admin": session['is_admin']})
             else:
-                flash("Invalid credentials", "error")
-                logging.error("❌ Invalid credentials provided")
+                return jsonify({"success": False, "message": "Invalid credentials"})
         except Exception as e:
             logging.error(f"❌ Error in login: {str(e)}")
-            flash(f"Login error: {str(e)}", "error")
+            return jsonify({"success": False, "message": f"Login error: {str(e)}"})
         finally:
             if conn and conn.is_connected():
                 cursor.close()
@@ -358,10 +351,10 @@ def reset_password():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session or session.get('is_admin', False):
+    if 'user_id' not in session:
         flash("Access denied", "error")
         logging.info(f"🔐 Session: {dict(session)}")
-        logging.error("❌ Access denied: User not logged in or is admin")
+        logging.error("❌ Access denied: User not logged in")
         return redirect(url_for('login'))
 
     conn = get_db_connection()
@@ -467,6 +460,9 @@ def login_photo():
         logging.error("❌ No photo uploaded for login_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
 
+    latitude = float(request.form.get('latitude', 0.0))
+    longitude = float(request.form.get('longitude', 0.0))
+
     conn = get_db_connection()
     if not conn:
         logging.error("❌ No database connection for login_photo")
@@ -498,8 +494,6 @@ def login_photo():
         file.save(login_photo_path)
         logging.info(f"🖼️ Login photo saved: {login_photo_path}")
 
-        g = geocoder.ip('me')
-        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
         logging.info(f"📍 Login location: ({latitude}, {longitude})")
 
         cursor.execute("""
@@ -575,6 +569,9 @@ def logout_photo():
         logging.error("❌ No photo uploaded for logout_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
 
+    latitude = float(request.form.get('latitude', 0.0))
+    longitude = float(request.form.get('longitude', 0.0))
+
     conn = get_db_connection()
     if not conn:
         logging.error("❌ No database connection for logout_photo")
@@ -613,8 +610,6 @@ def logout_photo():
         file.save(logout_photo_path)
         logging.info(f"🖼️ Logout photo saved: {logout_photo_path}")
 
-        g = geocoder.ip('me')
-        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
         logging.info(f"📍 Logout location: ({latitude}, {longitude})")
 
         cursor.execute("""
