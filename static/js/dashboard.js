@@ -4,6 +4,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const sidebar = document.getElementById('sidebar');
     let stream = null;
 
+    // Request notification permission
+    let notificationPermission = 'default';
+    if ('Notification' in window) {
+        Notification.requestPermission().then(perm => {
+            notificationPermission = perm;
+        });
+    }
+
     // Toggle sidebar for mobile
     if (window.innerWidth < 992) {
         sidebar.classList.add('offcanvas', 'offcanvas-start');
@@ -132,26 +140,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (captureLoginBtn) {
         captureLoginBtn.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('face_image', blob, 'capture.jpg');
-                fetch('/login_photo', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(data => {
-                        stopCameraBtn.click();
-                        if (data.success) {
-                            const loginTime = new Date().toLocaleString();
-                            alert(`Login Successful! Time: ${loginTime}\nAttendance Submitted\nPhoto: ${data.login_photo}`);
-                            location.reload();
-                        } else {
-                            alert(data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error capturing login:', error));
-            }, 'image/jpeg');
+            navigator.geolocation.getCurrentPosition(pos => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob(blob => {
+                    const formData = new FormData();
+                    formData.append('face_image', blob, 'capture.jpg');
+                    formData.append('latitude', pos.coords.latitude);
+                    formData.append('longitude', pos.coords.longitude);
+                    fetch('/login_photo', { method: 'POST', body: formData })
+                        .then(response => response.json())
+                        .then(data => {
+                            stopCameraBtn.click();
+                            if (data.success) {
+                                const loginTime = new Date().toLocaleString();
+                                alert(`Login Successful! Time: ${loginTime}\nAttendance Submitted\nPhoto: ${data.login_photo}`);
+                                location.reload();
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => console.error('Error capturing login:', error));
+                }, 'image/jpeg');
+            }, err => {
+                alert('Error accessing location: ' + err.message + '. Location access is required for attendance.');
+            }, { enableHighAccuracy: true });
         });
     }
 
@@ -182,26 +196,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (captureLogoutBtn) {
         captureLogoutBtn.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('face_image', blob, 'capture.jpg');
-                fetch('/logout_photo', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(data => {
-                        stopCameraBtn.click();
-                        if (data.success) {
-                            const logoutTime = new Date().toLocaleString();
-                            alert(`Logout Successful! Time: ${logoutTime}\nAttendance Submitted\nPhoto: ${data.logout_photo}`);
-                            location.reload();
-                        } else {
-                            alert(data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error capturing logout:', error));
-            }, 'image/jpeg');
+            navigator.geolocation.getCurrentPosition(pos => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob(blob => {
+                    const formData = new FormData();
+                    formData.append('face_image', blob, 'capture.jpg');
+                    formData.append('latitude', pos.coords.latitude);
+                    formData.append('longitude', pos.coords.longitude);
+                    fetch('/logout_photo', { method: 'POST', body: formData })
+                        .then(response => response.json())
+                        .then(data => {
+                            stopCameraBtn.click();
+                            if (data.success) {
+                                const logoutTime = new Date().toLocaleString();
+                                alert(`Logout Successful! Time: ${logoutTime}\nAttendance Submitted\nPhoto: ${data.logout_photo}`);
+                                location.reload();
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => console.error('Error capturing logout:', error));
+                }, 'image/jpeg');
+            }, err => {
+                alert('Error accessing location: ' + err.message + '. Location access is required for attendance.');
+            }, { enableHighAccuracy: true });
         });
     }
 
@@ -220,7 +240,11 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.message) {
-                    alert(`New Notification: ${data.message}`);
+                    if (notificationPermission === 'granted') {
+                        new Notification('New Notification', { body: data.message });
+                    } else {
+                        alert(`New Notification: ${data.message}`);
+                    }
                     location.reload();
                 }
             })
