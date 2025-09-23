@@ -71,8 +71,6 @@
             </div>
 
             <section class="content-section active" id="attendance">
-                
-
                 <div class="card">
                     <h3>Attendance</h3>
                     <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A' }}</p>
@@ -168,26 +166,58 @@
 
             <section class="content-section" id="policies">
                 <div class="card">
-                    <h3>Company Policies</h3>
+                    <h3>Quality Policies & Objectives</h3>
+                    <p>
+                        As a leading provider of telecommunication services, we at <span class="highlight">Jhaishna Technologies</span>
+                        are dedicated to maintaining the highest standards of quality in all aspects of our operations.
+                        This section outlines our Quality Policy, Company Objectives, and our commitment to deliver exceptional service to our customers.
+                    </p>
+                    <h4>Quality Policy</h4>
+                    <p>Our Quality Policy is built around the following key principles:</p>
                     <ul class="list-group">
-                        <li>Attendance Policy: Employees must log in by 9 AM.</li>
-                        <h2>Shifts</h2>
-                        <li>1. Morning Shift</li>
-                        <li>2. General Shift</li>
-                        <li>3. Second Shift</li>
-                        <li>4. Night Shift</li>
-                        <li>Leave Policy: 15 days annual leave allowed.</li>
-                        <li>Remote Work: Allowed with prior approval.</li>
-                        <br>
-                        <h2>Dress Code Policy</h2>
-                        <li>1. Business casual attire is expected in the office at all times.</li>
-                        <li>2. No Jeans, T-Shirts, Hoodies, or Shorts are allowed.</li>
-                        <li>3. Shoes should be closed-toe in design and appropriate for the office environment.</li>
-                        <li>4. No visible tattoos or piercings are allowed.</li>
-                        <li>5. English is the mandatory language of communication at our office.</li>
-                        <br>
-                        <h2 style="color:red">**Failure to comply may result in disciplinary action.**</h2>
+                        <li><span class="highlight">Customer-Centric Approach:</span> We are committed to understanding and exceeding the evolving needs of our customers, ensuring our telecommunication services consistently meet or exceed their expectations.</li>
+                        <li><span class="highlight">Continuous Improvement:</span> We embrace a culture of continuous improvement, constantly evaluating and refining our processes, technologies, and best practices to stay ahead of industry trends and deliver optimal performance.</li>
+                        <li><span class="highlight">Compliance and Regulatory Standards:</span> We strictly adhere to all relevant industry regulations, standards, and legal requirements, ensuring that our operations maintain the highest levels of compliance and integrity.</li>
                     </ul>
+                    <h4>Objectives</h4>
+                    <p>In line with our Quality Policy, we have set forth the following objectives to guide our teams and drive our success:</p>
+                    <ul class="list-group">
+                        <li><span class="highlight">Automatic Service Activation Program:</span> Our dedicated team ensures seamless activation and provisioning of telecommunication services, guaranteeing a smooth and efficient onboarding experience for our customers.</li>
+                        <li><span class="highlight">Billing and Revenue Management:</span> Our teams in Operations, Testing, and Monitoring work tirelessly to ensure accurate and timely billing while proactively identifying and addressing any revenue-related issues.</li>
+                        <li><span class="highlight">OAP Design Development & Testing:</span> We continuously improve our processes and deliver exceptional products/services. With a focus on Innovative Design, Seamless Development, Rigorous Testing, and Continuous Improvement, we aim to exceed customer expectations.</li>
+                    </ul>
+                    <p>
+                        Staying at the forefront of innovation and delivering exceptional value to our customers is our main motto.
+                        Through our focus on design, development, and testing, we are confident in our ability to exceed your expectations
+                        and help you achieve your goals.
+                    </p>
+                    <h4>Company Policies</h4>
+                    <ul class="list-group">
+                        <li><span class="highlight">Attendance Policy:</span> Employees must log in on time.</li>
+                        <li><span class="highlight">Shifts:</span>
+                            <ul>
+                                <li>Morning Shift - 7:00AM to 4:00PM</li>
+                                <li>General Shift - 10:00AM to 7:00PM</li>
+                                <li>Second Shift - 1:00PM to 10:00PM</li>
+                                <li>Night Shift - 10:00PM to 7:00AM</li>
+                            </ul>
+                        </li>
+                        <li><span class="highlight">Leave Policy:</span> 15 days annual leave allowed.</li>
+                        <li><span class="highlight">Remote Work:</span> Allowed with prior approval.</li>
+                        <li><span class="highlight">Dress Code Policy:</span>
+                            <ul>
+                                <li>Business casual attire is expected in the office at all times.</li>
+                                <li>No Jeans, T-Shirts, Hoodies, or Shorts are allowed.</li>
+                                <li>Shoes should be closed-toe in design and appropriate for the office environment.</li>
+                                <li>No visible tattoos or piercings are allowed.</li>
+                                <li>English is the mandatory language of communication at our office.</li>
+                            </ul>
+                        </li>
+                        <li style="color: #ef4444; font-weight: bold;">**Failure to comply may result in disciplinary action.**</li>
+                    </ul>
+                    <div class="footer">
+                        &copy; 2025 Jhaishna Technologies. All Rights Reserved.
+                    </div>
                 </div>
             </section>
 
@@ -203,7 +233,7 @@
                         </a>
                     </div>
                 </div>
-            </section>            
+            </section>
 
             <section class="content-section" id="leaves">
                 <div class="card">
@@ -223,6 +253,7 @@
                         <li>Sick Leave: 2025-02-01 to 2025-02-03 - Approved</li>
                     </ul>
                 </div>
+                <li style="color: #080065; font-weight: bold;">This feature is under development and will be available soon.</li>
             </section>
 
             <section class="content-section" id="notifications">
