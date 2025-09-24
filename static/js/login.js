@@ -8,17 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle form submission
     const loginForm = document.getElementById('loginForm');
     loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
         // Log form submission attempt
         console.log('Form submission initiated');
 
         const email = document.querySelector('input[name="email"]').value;
         const password = document.querySelector('input[name="password"]').value;
+        const loginType = document.querySelector('select[name="login_type"]').value;
 
         // Client-side validation
-        if (!email || !password) {
+        if (!email || !password || !loginType) {
+            e.preventDefault(); // Prevent submission if validation fails
             alert('Please fill in all fields.');
-            console.error('Validation failed: Missing email or password');
+            console.error('Validation failed: Missing email, password, or login type');
             return;
         }
 
@@ -26,38 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = loginForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Logging in...';
-        console.log('Form data:', { email });
+        console.log('Form data:', { email, loginType });
 
-        const formData = new FormData(loginForm);
-        fetch('/login', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Login';
-            if (data.success) {
-                if (data.is_admin) {
-                    document.getElementById('adminModal').style.display = 'flex';
-                    document.getElementById('userDashBtn').onclick = () => {
-                        window.location.href = '/dashboard';
-                    };
-                    document.getElementById('adminDashBtn').onclick = () => {
-                        window.location.href = '/admin';
-                    };
-                } else {
-                    window.location.href = '/dashboard';
-                }
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Login';
-            console.error('Error during login:', error);
-            alert('An error occurred during login.');
-        });
+        // Allow native form submission
     });
 });
