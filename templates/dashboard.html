@@ -39,8 +39,8 @@
                         <input type="text" id="position" value="{{ user_position }}" placeholder="Position">
                         <p><strong>Joined:</strong> {{ created_at|strftime('%Y-%m-%d') }}</p>
                         <input type="file" id="new-face-image" accept="image/*" style="display: none;">
-                        <button id="edit-profile-btn">Edit Profile</button>
-                        <button id="save-profile-btn">Save Changes</button>
+                        <!-- <button id="edit-profile-btn">Edit Profile</button>
+                        <button id="save-profile-btn">Save Changes</button> -->
                     </div>
                 </div>
                 <ul class="sidebar-nav">
@@ -79,7 +79,7 @@
                     <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else 'N/A' }}</p>
                     <div class="attendance-form">
                         {% if can_login %}
-                            <video id="video" autoplay></video>
+                            <video id="video" autoplay muted playsinline style="width: 100%; height: auto; max-width: 400px; border: 1px solid #ddd;"></video>
                             <button id="start-camera-btn">Start Camera</button>
                             <button id="stop-camera-btn" style="display: none;">Stop Camera</button>
                             <button id="capture-login-btn" style="display: none;">Capture Login</button>
@@ -88,7 +88,7 @@
                             <button id="submit-status-btn">Submit Daily Status</button>
                         {% elif not attendance_submitted %}
                             <p>Daily status submitted. Please capture your logout photo.</p>
-                            <video id="video" autoplay></video>
+                            <video id="video" autoplay muted playsinline style="width: 100%; height: auto; max-width: 400px; border: 1px solid #ddd;"></video>
                             <button id="start-camera-btn">Start Camera</button>
                             <button id="stop-camera-btn" style="display: none;">Stop Camera</button>
                             <button id="capture-logout-btn" style="display: none;">Capture Logout</button>
@@ -170,12 +170,14 @@
                 <div class="card">
                     <h3>Company Policies</h3>
                     <ul class="list-group">
-                        <li>Attendance Policy: Employees must log in by 9 AM.</li>
-                        <h2>Shifts</h2>
+                        <li>Attendance Policy: Employees must log in by 10 AM.</li>
+                        <!-- <h2>Shifts</h2>
                         <li>1. Morning Shift</li>
                         <li>2. General Shift</li>
                         <li>3. Second Shift</li>
-                        <li>4. Night Shift</li>
+                        <li>4. Night Shift</li> -->
+                        <li>Daily Standup: 10 AM - 10:30 AM</li>
+                        <li>Daily Work Updates: Send updates via Zoho Mail.</li>
                         <li>Leave Policy: 15 days annual leave allowed.</li>
                         <li>Remote Work: Allowed with prior approval.</li>
                         <br>
