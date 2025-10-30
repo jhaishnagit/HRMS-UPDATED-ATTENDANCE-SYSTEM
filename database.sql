@@ -37,7 +37,7 @@ CREATE TABLE IF NOT Exists daily_updates (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT,
     update_message TEXT,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_verified TINYINT DEFAULT 0,
     verification_status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
     verified_at TIMESTAMP,
@@ -64,3 +64,4 @@ CREATE TABLE IF NOT Exists attendance (
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
