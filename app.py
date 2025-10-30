@@ -30,7 +30,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "default_secret_key_123")  #
 db_config = {
     "host": os.environ.get("DB_HOST", "localhost"),
     "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", ""),
+    "password": os.environ.get("DB_PASSWORD", "jIAAbnxS5vq7[kE]"),
     "database": os.environ.get("DB_NAME", "gps_face_db"),
     "port": int(os.environ.get("DB_PORT", 3306))
 }
@@ -39,13 +39,13 @@ def get_db_connection():
     try:
         conn = mysql.connector.connect(**db_config)
         if conn.is_connected():
-            logging.info("✅ Successfully established database connection")
+            logging.info("Successfully established database connection")
             return conn
         else:
-            logging.error("❌ Failed to establish database connection")
+            logging.error("Failed to establish database connection")
             return None
     except Error as err:
-        logging.error(f"❌ Database connection failed: {err}")
+        logging.error(f"Database connection failed: {err}")
         flash(f"Database connection failed: {err}", "error")
         return None
 
@@ -53,11 +53,11 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ Cannot initialize database: No connection")
+        logging.error("Cannot initialize database: No connection")
         return
     try:
         cursor = conn.cursor()
-        logging.info("🛠️ Initializing database schema")
+        logging.info("Initializing database schema")
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,9 +117,9 @@ def init_db():
             )
         """)
         conn.commit()
-        logging.info("✅ Database schema initialized successfully")
+        logging.info("Database schema initialized successfully")
     except Error as err:
-        logging.error(f"❌ Error initializing database: {err}")
+        logging.error(f"Error initializing database: {err}")
         flash(f"Error initializing database: {err}", "error")
     finally:
         if conn and conn.is_connected():
@@ -131,52 +131,184 @@ app.jinja_env.filters['strftime'] = lambda dt, fmt: dt.strftime(fmt) if dt else 
 
 @app.route('/')
 def home():
-    logging.info("🏠 Accessing home route, redirecting to login")
+    logging.info("Accessing home route, redirecting to login")
     return redirect(url_for('login'))
 
+
+# ==================== LOGIN ROUTE (UPDATED) ====================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        login_type = request.form.get('login_type')
-        logging.info(f"🔐 Login attempt: email={email}, login_type={login_type}")
+        logging.info(f"Login attempt: email={email}")
 
         if not email or not password:
             flash("Email and password are required", "error")
-            logging.error("❌ Missing email or password")
             return render_template('login.html')
 
         conn = get_db_connection()
         if not conn:
             flash("Database connection failed", "error")
-            logging.error("❌ Failed to get DB connection")
             return render_template('login.html')
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
-            logging.info(f"🔎 User query result: {user['id'] if user else 'No user found'}")
+
             if user and check_password_hash(user['password'], password):
                 session['user_id'] = user['id']
                 session['username'] = user['username']
-                session['is_admin'] = user['is_admin'] if login_type == 'admin' else False
+                session['is_admin'] = bool(user['is_admin'])
+                session.pop('acting_as_user', None)  # Reset mode on new login
                 session.permanent = True
-                logging.info(f"🔐 Session after login: {dict(session)}")
-                flash("Login successful!", "success")
-                return redirect(url_for('admin' if session['is_admin'] else 'dashboard'))
+                logging.info(f"Session after login: {dict(session)}")
+
+                if user['is_admin']:
+                    flash("Login successful! Choose your role.", "success")
+                    return redirect(url_for('login') + '?show_modal=true')
+                else:
+                    flash("Login successful!", "success")
+                    return redirect(url_for('dashboard'))
             else:
                 flash("Invalid credentials", "error")
-                logging.error("❌ Invalid credentials provided")
         except Exception as e:
-            logging.error(f"❌ Error in login: {str(e)}")
+            logging.error(f"Error in login: {str(e)}")
             flash(f"Login error: {str(e)}", "error")
         finally:
             if conn and conn.is_connected():
                 cursor.close()
                 conn.close()
-    logging.info("📄 Rendering login page")
+    else:
+        # GET request: show modal if needed
+        pass
+
     return render_template('login.html')
+
+
+# NEW: Handle admin dashboard choice
+@app.route('/choose_dashboard', methods=['POST'])
+def choose_dashboard():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({"success": False})
+
+    role = request.form.get('role')
+    if role == 'admin':
+        session.pop('acting_as_user', None)
+        return jsonify({"success": True, "redirect": url_for('admin')})
+    elif role == 'user':
+        session['acting_as_user'] = True
+        return jsonify({"success": True, "redirect": url_for('dashboard')})
+    else:
+        return jsonify({"success": False})
+
+
+# ==================== DASHBOARD (FIXED) ====================
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash("Please login to continue", "error")
+        return redirect(url_for('login'))
+
+    # Block admin unless acting as user
+    if session.get('is_admin') and not session.get('acting_as_user'):
+        flash("Admins must choose a role", "error")
+        return redirect(url_for('login') + '?show_modal=true')
+
+    conn = get_db_connection()
+    if not conn:
+        logging.error("No database connection for dashboard")
+        flash("Database connection failed", "error")
+        return render_template('dashboard.html', last_login=None, last_logout=None, rota_image_base64=None)
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        logging.info(f"Fetching user data for user_id: {session['user_id']}")
+        cursor.execute("SELECT email, face_image, position, created_at FROM users WHERE id = %s", (session['user_id'],))
+        user = cursor.fetchone()
+        if not user:
+            flash("User not found", "error")
+            logging.error(f"User not found: user_id={session['user_id']}")
+            return redirect(url_for('logout'))
+
+        logging.info(f"Fetching today's attendance for user_id: {session['user_id']}")
+        cursor.execute("SELECT login_time, logout_time, daily_status_submitted FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
+        today_attendance = cursor.fetchone()
+        can_login = not bool(today_attendance)
+        daily_status_submitted = bool(today_attendance and today_attendance['daily_status_submitted'])
+        attendance_submitted = bool(today_attendance and today_attendance['logout_time'])
+        logging.info(f"Today's attendance: {'Found' if today_attendance else 'Not found'}, can_login={can_login}, daily_status_submitted={daily_status_submitted}, attendance_submitted={attendance_submitted}")
+
+        logging.info(f"Fetching last attendance for user_id: {session['user_id']}")
+        cursor.execute("""
+            SELECT login_time, logout_time 
+            FROM attendance 
+            WHERE user_id = %s 
+            ORDER BY login_time DESC 
+            LIMIT 1
+        """, (session['user_id'],))
+        last_attendance = cursor.fetchone()
+        logging.info(f"Last attendance: {'Found' if last_attendance else 'Not found'}")
+
+        logging.info(f"Fetching 30-day attendance history for user_id: {session['user_id']}")
+        cursor.execute("""
+            SELECT DATE(login_time) as date, attendance_status 
+            FROM attendance 
+            WHERE user_id = %s AND login_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        """, (session['user_id'],))
+        attendance_data = cursor.fetchall()
+        attendance_records = []
+        for i in range(30):
+            date = (datetime.now() - timedelta(days=i)).date()
+            record = next((r for r in attendance_data if r['date'] == date), None)
+            attendance_records.append({'date': date, 'present': record['attendance_status'] == 'Present' if record else False})
+        logging.info(f"Retrieved {len(attendance_records)} attendance records")
+
+        logging.info(f"Fetching notifications for user_id: {session['user_id']}")
+        cursor.execute("SELECT message, created_at FROM notifications WHERE user_id = %s ORDER BY created_at DESC", (session['user_id'],))
+        notifications = cursor.fetchall()
+        logging.info(f"Retrieved {len(notifications)} notifications")
+
+        logging.info(f"Fetching daily updates for user_id: {session['user_id']}")
+        cursor.execute("SELECT update_message, submitted_at, verification_status FROM daily_updates WHERE user_id = %s ORDER BY submitted_at DESC", (session['user_id'],))
+        daily_updates = cursor.fetchall()
+        logging.info(f"Retrieved {len(daily_updates)} daily updates")
+
+        logging.info("Fetching latest rota image")
+        cursor.execute("SELECT rota_image FROM rota ORDER BY uploaded_at DESC LIMIT 1")
+        rota = cursor.fetchone()
+        rota_image_base64 = base64.b64encode(rota['rota_image']).decode('utf-8') if rota and rota['rota_image'] else None
+        logging.info(f"Rota image: {'Found' if rota else 'Not found'}")
+
+        user_face_image_base64 = base64.b64encode(user['face_image']).decode('utf-8') if user['face_image'] else None
+        logging.info(f"User face image: {'Found' if user['face_image'] else 'Not found'}")
+
+        logging.info("Rendering dashboard template")
+        return render_template('dashboard.html',
+                              user_email=user['email'],
+                              user_face_image_base64=user_face_image_base64,
+                              user_position=user['position'],
+                              created_at=user['created_at'],
+                              last_login=last_attendance['login_time'] if last_attendance else None,
+                              last_logout=last_attendance['logout_time'] if last_attendance else None,
+                              can_login=can_login,
+                              daily_status_submitted=daily_status_submitted,
+                              attendance_submitted=attendance_submitted,
+                              attendance_records=attendance_records,
+                              notifications=notifications,
+                              daily_updates=daily_updates,
+                              rota_image_base64=rota_image_base64)
+    except Exception as e:
+        logging.error(f"Dashboard error: {str(e)}")
+        flash(f"Error loading dashboard: {str(e)}", "error")
+        return render_template('dashboard.html', last_login=None, last_logout=None, rota_image_base64=None)
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
+
+# ==================== ALL OTHER ROUTES (UNCHANGED) ====================
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -185,22 +317,22 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         face_image = request.files.get('face_image')
-        logging.info(f"📝 Register attempt: username={username}, email={email}")
+        logging.info(f"Register attempt: username={username}, email={email}")
 
         if not all([username, email, password, face_image]):
             flash("All fields are required", "error")
-            logging.error("❌ Missing required fields")
+            logging.error("Missing required fields")
             return render_template('register.html')
 
         face_image_data = face_image.read()
         if not face_image_data:
             flash("Invalid face image", "error")
-            logging.error("❌ Invalid or empty face image")
+            logging.error("Invalid or empty face image")
             return render_template('register.html')
 
         conn = get_db_connection()
         if not conn:
-            logging.error("❌ No database connection for register")
+            logging.error("No database connection for register")
             flash("Database connection failed", "error")
             return render_template('register.html')
 
@@ -213,47 +345,49 @@ def register():
             )
             conn.commit()
             flash("Registration successful! Please login.", "success")
-            logging.info(f"✅ User {username} registered successfully")
+            logging.info(f"User {username} registered successfully")
             return redirect(url_for('login'))
         except mysql.connector.IntegrityError:
             flash("Username or email already exists", "error")
-            logging.error(f"❌ Username or email already exists: {username}, {email}")
+            logging.error(f"Username or email already exists: {username}, {email}")
         except Exception as e:
             flash(f"Registration error: {str(e)}", "error")
-            logging.error(f"❌ Registration error: {str(e)}")
+            logging.error(f"Registration error: {str(e)}")
         finally:
             if conn and conn.is_connected():
                 cursor.close()
                 conn.close()
-    logging.info("📄 Rendering register page")
+    logging.info("Rendering register page")
     return render_template('register.html')
+
+# ... [Keep ALL other routes exactly as they were: forgot_password, verify_otp, reset_password, login_photo, logout_photo, update_profile, admin_update_user, upload_rota, send_notification, check_notifications, admin, update_attendance_status, view_excel, export_page, export, logout] ...
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email')
-        logging.info(f"🔑 Forgot password request for email: {email}")
+        logging.info(f"Forgot password request for email: {email}")
         if not email:
             flash("Email is required", "error")
-            logging.error("❌ Missing email for forgot password")
+            logging.error("Missing email for forgot password")
             return render_template('forgot_password.html')
 
         conn = get_db_connection()
         if not conn:
-            logging.error("❌ No database connection for forgot_password")
+            logging.error("No database connection for forgot_password")
             flash("Database connection failed", "error")
             return render_template('forgot_password.html')
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
-            logging.info(f"🔎 User lookup for forgot password: {'Found' if user else 'Not found'}")
+            logging.info(f"User lookup for forgot password: {'Found' if user else 'Not found'}")
             if user:
                 otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                 session['otp'] = otp
                 session['reset_email'] = email
                 session['otp_sent'] = True
-                logging.info(f"🔐 Generated OTP: {otp}")
+                logging.info(f"Generated OTP: {otp}")
 
                 sender = os.environ.get("SMTP_SENDER", "your_email@gmail.com")
                 smtp_password = os.environ.get("SMTP_PASSWORD", "your_app_password")
@@ -271,54 +405,54 @@ def forgot_password():
                         server.login(sender, smtp_password)
                         server.send_message(msg)
                     flash("OTP sent to your email!", "success")
-                    logging.info(f"📧 OTP email sent to: {email}")
+                    logging.info(f"OTP email sent to: {email}")
                     return redirect(url_for('forgot_password'))
                 except smtplib.SMTPAuthenticationError:
                     flash("Failed to authenticate with email server", "error")
-                    logging.error("❌ SMTP authentication failed: Check email and app password")
+                    logging.error("SMTP authentication failed: Check email and app password")
                     return render_template('forgot_password.html')
                 except smtplib.SMTPException as e:
                     flash(f"Failed to send email: {str(e)}", "error")
-                    logging.error(f"❌ SMTP error: {str(e)}")
+                    logging.error(f"SMTP error: {str(e)}")
                     return render_template('forgot_password.html')
                 except Exception as e:
                     flash(f"Unexpected error sending email: {str(e)}", "error")
-                    logging.error(f"❌ Unexpected error in SMTP: {str(e)}")
+                    logging.error(f"Unexpected error in SMTP: {str(e)}")
                     return render_template('forgot_password.html')
             else:
                 flash("Email not found", "error")
-                logging.error(f"❌ Email not found: {email}")
+                logging.error(f"Email not found: {email}")
         finally:
             if conn and conn.is_connected():
                 cursor.close()
                 conn.close()
-    logging.info("📄 Rendering forgot_password page")
+    logging.info("Rendering forgot_password page")
     return render_template('forgot_password.html')
 
 @app.route('/verify_otp', methods=['POST'])
 def verify_otp():
     otp = request.form.get('otp')
-    logging.info(f"🔐 Verifying OTP: {otp}")
+    logging.info(f"Verifying OTP: {otp}")
     if not otp:
         flash("OTP is required", "error")
-        logging.error("❌ Missing OTP")
+        logging.error("Missing OTP")
         return redirect(url_for('forgot_password'))
 
     if otp == session.get('otp'):
         session.pop('otp', None)
         session['otp_verified'] = True
         flash("OTP verified!", "success")
-        logging.info("✅ OTP verified successfully")
+        logging.info("OTP verified successfully")
         return redirect(url_for('reset_password'))
     else:
         flash("Invalid OTP", "error")
-        logging.error("❌ Invalid OTP provided")
+        logging.error("Invalid OTP provided")
         return redirect(url_for('forgot_password'))
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
     if not session.get('otp_verified'):
-        logging.error("❌ OTP not verified, redirecting to login")
+        logging.error("OTP not verified, redirecting to login")
         flash("Please verify OTP first", "error")
         return redirect(url_for('login'))
 
@@ -326,13 +460,13 @@ def reset_password():
         new_password = request.form.get('new_password')
         if not new_password:
             flash("New password is required", "error")
-            logging.error("❌ Missing new password")
+            logging.error("Missing new password")
             return render_template('reset_password.html')
 
-        logging.info(f"🔑 Resetting password for email: {session.get('reset_email')}")
+        logging.info(f"Resetting password for email: {session.get('reset_email')}")
         conn = get_db_connection()
         if not conn:
-            logging.error("❌ No database connection for reset_password")
+            logging.error("No database connection for reset_password")
             flash("Database connection failed", "error")
             return render_template('reset_password.html')
         try:
@@ -344,142 +478,45 @@ def reset_password():
             session.pop('otp_verified', None)
             session.pop('otp_sent', None)
             flash("Password reset successful! Please login.", "success")
-            logging.info("✅ Password reset successful")
+            logging.info("Password reset successful")
             return redirect(url_for('login'))
         except Exception as e:
-            logging.error(f"❌ Reset password error: {str(e)}")
+            logging.error(f"Reset password error: {str(e)}")
             flash(f"Reset password error: {str(e)}", "error")
         finally:
             if conn and conn.is_connected():
                 cursor.close()
                 conn.close()
-    logging.info("📄 Rendering reset_password page")
+    logging.info("Rendering reset_password page")
     return render_template('reset_password.html')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session or session.get('is_admin', False):
-        flash("Access denied", "error")
-        logging.info(f"🔐 Session: {dict(session)}")
-        logging.error("❌ Access denied: User not logged in or is admin")
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    if not conn:
-        logging.error("❌ No database connection for dashboard")
-        flash("Database connection failed", "error")
-        return render_template('dashboard.html', last_login=None, last_logout=None, rota_image_base64=None)
-
-    cursor = conn.cursor(dictionary=True)
-    try:
-        logging.info(f"🔍 Fetching user data for user_id: {session['user_id']}")
-        cursor.execute("SELECT email, face_image, position, created_at FROM users WHERE id = %s", (session['user_id'],))
-        user = cursor.fetchone()
-        if not user:
-            flash("User not found", "error")
-            logging.error(f"❌ User not found: user_id={session['user_id']}")
-            return redirect(url_for('logout'))
-
-        logging.info(f"🔍 Fetching today's attendance for user_id: {session['user_id']}")
-        cursor.execute("SELECT login_time, logout_time, daily_status_submitted FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
-        today_attendance = cursor.fetchone()
-        can_login = not bool(today_attendance)
-        daily_status_submitted = bool(today_attendance and today_attendance['daily_status_submitted'])
-        attendance_submitted = bool(today_attendance and today_attendance['logout_time'])
-        logging.info(f"📅 Today's attendance: {'Found' if today_attendance else 'Not found'}, can_login={can_login}, daily_status_submitted={daily_status_submitted}, attendance_submitted={attendance_submitted}")
-
-        logging.info(f"🔍 Fetching last attendance for user_id: {session['user_id']}")
-        cursor.execute("""
-            SELECT login_time, logout_time 
-            FROM attendance 
-            WHERE user_id = %s 
-            ORDER BY login_time DESC 
-            LIMIT 1
-        """, (session['user_id'],))
-        last_attendance = cursor.fetchone()
-        logging.info(f"📅 Last attendance: {'Found' if last_attendance else 'Not found'}")
-
-        logging.info(f"🔍 Fetching 30-day attendance history for user_id: {session['user_id']}")
-        cursor.execute("""
-            SELECT DATE(login_time) as date, attendance_status 
-            FROM attendance 
-            WHERE user_id = %s AND login_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        """, (session['user_id'],))
-        attendance_data = cursor.fetchall()
-        attendance_records = []
-        for i in range(30):
-            date = (datetime.now() - timedelta(days=i)).date()
-            record = next((r for r in attendance_data if r['date'] == date), None)
-            attendance_records.append({'date': date, 'present': record['attendance_status'] == 'Present' if record else False})
-        logging.info(f"📅 Retrieved {len(attendance_records)} attendance records")
-
-        logging.info(f"🔍 Fetching notifications for user_id: {session['user_id']}")
-        cursor.execute("SELECT message, created_at FROM notifications WHERE user_id = %s ORDER BY created_at DESC", (session['user_id'],))
-        notifications = cursor.fetchall()
-        logging.info(f"🔔 Retrieved {len(notifications)} notifications")
-
-        logging.info(f"🔍 Fetching daily updates for user_id: {session['user_id']}")
-        cursor.execute("SELECT update_message, submitted_at, verification_status FROM daily_updates WHERE user_id = %s ORDER BY submitted_at DESC", (session['user_id'],))
-        daily_updates = cursor.fetchall()
-        logging.info(f"📝 Retrieved {len(daily_updates)} daily updates")
-
-        logging.info("🔍 Fetching latest rota image")
-        cursor.execute("SELECT rota_image FROM rota ORDER BY uploaded_at DESC LIMIT 1")
-        rota = cursor.fetchone()
-        rota_image_base64 = base64.b64encode(rota['rota_image']).decode('utf-8') if rota and rota['rota_image'] else None
-        logging.info(f"🖼️ Rota image: {'Found' if rota else 'Not found'}")
-
-        user_face_image_base64 = base64.b64encode(user['face_image']).decode('utf-8') if user['face_image'] else None
-        logging.info(f"🖼️ User face image: {'Found' if user['face_image'] else 'Not found'}")
-
-        logging.info("✅ Rendering dashboard template")
-        return render_template('dashboard.html',
-                              user_email=user['email'],
-                              user_face_image_base64=user_face_image_base64,
-                              user_position=user['position'],
-                              created_at=user['created_at'],
-                              last_login=last_attendance['login_time'] if last_attendance else None,
-                              last_logout=last_attendance['logout_time'] if last_attendance else None,
-                              can_login=can_login,
-                              daily_status_submitted=daily_status_submitted,
-                              attendance_submitted=attendance_submitted,
-                              attendance_records=attendance_records,
-                              notifications=notifications,
-                              daily_updates=daily_updates,
-                              rota_image_base64=rota_image_base64)
-    except Exception as e:
-        logging.error(f"❌ Dashboard error: {str(e)}")
-        flash(f"Error loading dashboard: {str(e)}", "error")
-        return render_template('dashboard.html', last_login=None, last_logout=None, rota_image_base64=None)
-    finally:
-        if conn and conn.is_connected():
-            cursor.close()
-            conn.close()
 
 @app.route('/login_photo', methods=['POST'])
 def login_photo():
     if 'user_id' not in session:
-        logging.error("❌ Not logged in for login_photo")
+        logging.error("Not logged in for login_photo")
         return jsonify({"success": False, "message": "Not logged in"})
 
     file = request.files.get('face_image')
     if not file:
-        logging.error("❌ No photo uploaded for login_photo")
+        logging.error("No photo uploaded for login_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
+
+    latitude = float(request.form.get('latitude', 0.0))
+    longitude = float(request.form.get('longitude', 0.0))
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for login_photo")
+        logging.error("No database connection for login_photo")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info(f"🔍 Fetching user face image for user_id: {session['user_id']}")
+        logging.info(f"Fetching user face image for user_id: {session['user_id']}")
         cursor.execute("SELECT face_image FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
         if not user or not user['face_image']:
-            logging.error("❌ No registered face image found")
+            logging.error("No registered face image found")
             return jsonify({"success": False, "message": "No registered face image"})
 
         registered_image = face_recognition.load_image_file(BytesIO(user['face_image']))
@@ -488,7 +525,7 @@ def login_photo():
         captured_enc = face_recognition.face_encodings(captured_image)
 
         if not registered_enc or not captured_enc or not face_recognition.compare_faces([registered_enc[0]], captured_enc[0])[0]:
-            logging.error("❌ Face verification failed for login")
+            logging.error("Face verification failed for login")
             return jsonify({"success": False, "message": "Face verification failed"})
 
         uploads_dir = os.path.join(app.static_folder, 'Uploads')
@@ -496,11 +533,9 @@ def login_photo():
         login_time = datetime.now()
         login_photo_path = os.path.join(uploads_dir, f"{session['username']}_login_{login_time.strftime('%Y%m%d%H%M%S')}.jpg")
         file.save(login_photo_path)
-        logging.info(f"🖼️ Login photo saved: {login_photo_path}")
+        logging.info(f"Login photo saved: {login_photo_path}")
 
-        g = geocoder.ip('me')
-        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
-        logging.info(f"📍 Login location: ({latitude}, {longitude})")
+        logging.info(f"Login location: ({latitude}, {longitude})")
 
         cursor.execute("""
             INSERT INTO attendance (user_id, login_time, login_photo_path, login_latitude, login_longitude, attendance_status) 
@@ -511,14 +546,14 @@ def login_photo():
         with open(login_photo_path, 'rb') as image_file:
             login_photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
 
-        logging.info("✅ Login recorded successfully")
+        logging.info("Login recorded successfully")
         return jsonify({
             "success": True,
             "message": "Login recorded",
             "login_photo": login_photo_base64
         })
     except Exception as e:
-        logging.error(f"❌ Login photo error: {str(e)}")
+        logging.error(f"Login photo error: {str(e)}")
         return jsonify({"success": False, "message": f"Error processing login: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -528,22 +563,22 @@ def login_photo():
 @app.route('/submit_daily_status', methods=['POST'])
 def submit_daily_status():
     if 'user_id' not in session:
-        logging.error("❌ Not logged in for submit_daily_status")
+        logging.error("Not logged in for submit_daily_status")
         return jsonify({"success": False, "message": "Not logged in"})
 
     daily_status = request.form.get('daily_status')
     if not daily_status:
-        logging.error("❌ Daily status is required")
+        logging.error("Daily status is required")
         return jsonify({"success": False, "message": "Daily status is required"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for submit_daily_status")
+        logging.error("No database connection for submit_daily_status")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor()
     try:
-        logging.info(f"📝 Submitting daily status for user_id: {session['user_id']}")
+        logging.info(f"Submitting daily status for user_id: {session['user_id']}")
         cursor.execute("""
             INSERT INTO daily_updates (user_id, update_message) 
             VALUES (%s, %s)
@@ -554,10 +589,10 @@ def submit_daily_status():
             WHERE user_id = %s AND DATE(login_time) = CURDATE() AND logout_time IS NULL
         """, (session['user_id'],))
         conn.commit()
-        logging.info("✅ Daily status submitted successfully")
+        logging.info("Daily status submitted successfully")
         return jsonify({"success": True, "message": "Daily status submitted"})
     except Exception as e:
-        logging.error(f"❌ Submit daily status error: {str(e)}")
+        logging.error(f"Submit daily status error: {str(e)}")
         return jsonify({"success": False, "message": f"Error submitting daily status: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -567,34 +602,37 @@ def submit_daily_status():
 @app.route('/logout_photo', methods=['POST'])
 def logout_photo():
     if 'user_id' not in session:
-        logging.error("❌ Not logged in for logout_photo")
+        logging.error("Not logged in for logout_photo")
         return jsonify({"success": False, "message": "Not logged in"})
 
     file = request.files.get('face_image')
     if not file:
-        logging.error("❌ No photo uploaded for logout_photo")
+        logging.error("No photo uploaded for logout_photo")
         return jsonify({"success": False, "message": "No photo uploaded"})
+
+    latitude = float(request.form.get('latitude', 0.0))
+    longitude = float(request.form.get('longitude', 0.0))
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for logout_photo")
+        logging.error("No database connection for logout_photo")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info(f"🔍 Checking daily status for user_id: {session['user_id']}")
+        logging.info(f"Checking daily status for user_id: {session['user_id']}")
         cursor.execute("SELECT daily_status_submitted FROM attendance WHERE user_id = %s AND DATE(login_time) = CURDATE()", (session['user_id'],))
         attendance = cursor.fetchone()
         if not attendance or not attendance['daily_status_submitted']:
-            logging.error("❌ Daily status not submitted")
+            logging.error("Daily status not submitted")
             return jsonify({"success": False, "message": "Please submit your daily status report before logging out"})
 
-        logging.info(f"🔍 Fetching user face image for user_id: {session['user_id']}")
+        logging.info(f"Fetching user face image for user_id: {session['user_id']}")
         cursor.execute("SELECT face_image FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
         if not user or not user['face_image']:
-            logging.error("❌ No registered face image found")
+            logging.error("No registered face image found")
             return jsonify({"success": False, "message": "No registered face image"})
 
         registered_image = face_recognition.load_image_file(BytesIO(user['face_image']))
@@ -603,7 +641,7 @@ def logout_photo():
         captured_enc = face_recognition.face_encodings(captured_image)
 
         if not registered_enc or not captured_enc or not face_recognition.compare_faces([registered_enc[0]], captured_enc[0])[0]:
-            logging.error("❌ Face verification failed for logout")
+            logging.error("Face verification failed for logout")
             return jsonify({"success": False, "message": "Face verification failed"})
 
         uploads_dir = os.path.join(app.static_folder, 'Uploads')
@@ -611,11 +649,9 @@ def logout_photo():
         logout_time = datetime.now()
         logout_photo_path = os.path.join(uploads_dir, f"{session['username']}_logout_{logout_time.strftime('%Y%m%d%H%M%S')}.jpg")
         file.save(logout_photo_path)
-        logging.info(f"🖼️ Logout photo saved: {logout_photo_path}")
+        logging.info(f"Logout photo saved: {logout_photo_path}")
 
-        g = geocoder.ip('me')
-        latitude, longitude = g.latlng if g.latlng else (0.0, 0.0)
-        logging.info(f"📍 Logout location: ({latitude}, {longitude})")
+        logging.info(f"Logout location: ({latitude}, {longitude})")
 
         cursor.execute("""
             UPDATE attendance 
@@ -629,14 +665,14 @@ def logout_photo():
         with open(logout_photo_path, 'rb') as image_file:
             logout_photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
 
-        logging.info("✅ Logout recorded successfully")
+        logging.info("Logout recorded successfully")
         return jsonify({
             "success": True,
             "message": "Logout recorded",
             "logout_photo": logout_photo_base64
         })
     except Exception as e:
-        logging.error(f"❌ Logout photo error: {str(e)}")
+        logging.error(f"Logout photo error: {str(e)}")
         return jsonify({"success": False, "message": f"Error processing logout: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -646,21 +682,21 @@ def logout_photo():
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
     if 'user_id' not in session:
-        logging.error("❌ Not logged in for update_profile")
+        logging.error("Not logged in for update_profile")
         return jsonify({"success": False, "message": "Not logged in"})
 
     email = request.form.get('email')
     face_image = request.files.get('face_image')
     position = request.form.get('position')
-    logging.info(f"🔄 Updating profile for user_id: {session['user_id']}, email={email}, position={position}")
+    logging.info(f"Updating profile for user_id: {session['user_id']}, email={email}, position={position}")
 
     if not any([email, face_image, position]):
-        logging.error("❌ No changes provided for profile update")
+        logging.error("No changes provided for profile update")
         return jsonify({"success": False, "message": "No changes provided"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for update_profile")
+        logging.error("No database connection for update_profile")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor()
@@ -676,14 +712,14 @@ def update_profile():
         if face_image:
             face_image_data = face_image.read()
             if not face_image_data:
-                logging.error("❌ Invalid or empty face image")
+                logging.error("Invalid or empty face image")
                 return jsonify({"success": False, "message": "Invalid face image"})
             updates.append("face_image = %s")
             params.append(face_image_data)
 
         params.append(session['user_id'])
         query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
-        logging.info(f"🔄 Executing profile update query: {query}")
+        logging.info(f"Executing profile update query: {query}")
         cursor.execute(query, tuple(params))
         conn.commit()
 
@@ -692,13 +728,13 @@ def update_profile():
         session['username'] = user_data['username']
         session['email'] = user_data['email']
         session['position'] = user_data['position']
-        logging.info("✅ Profile updated successfully")
+        logging.info("Profile updated successfully")
         return jsonify({"success": True, "message": "Profile updated"})
     except mysql.connector.IntegrityError:
-        logging.error("❌ Username or email already exists")
+        logging.error("Username or email already exists")
         return jsonify({"success": False, "message": "Email already exists"})
     except Exception as e:
-        logging.error(f"❌ Profile update error: {str(e)}")
+        logging.error(f"Profile update error: {str(e)}")
         return jsonify({"success": False, "message": f"Error updating profile: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -708,22 +744,22 @@ def update_profile():
 @app.route('/admin_update_user/<int:user_id>', methods=['POST'])
 def admin_update_user(user_id):
     if not session.get('is_admin'):
-        logging.error("❌ Access denied for admin_update_user")
+        logging.error("Access denied for admin_update_user")
         return jsonify({"success": False, "message": "Access denied"})
 
     username = request.form.get('username')
     email = request.form.get('email')
     position = request.form.get('position')
     face_image = request.files.get('face_image')
-    logging.info(f"🔄 Admin updating user: user_id={user_id}, username={username}, email={email}")
+    logging.info(f"Admin updating user: user_id={user_id}, username={username}, email={email}")
 
     if not any([username, email, position, face_image]):
-        logging.error("❌ No changes provided for admin user update")
+        logging.error("No changes provided for admin user update")
         return jsonify({"success": False, "message": "No changes provided"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for admin_update_user")
+        logging.error("No database connection for admin_update_user")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor()
@@ -742,23 +778,23 @@ def admin_update_user(user_id):
         if face_image:
             face_image_data = face_image.read()
             if not face_image_data:
-                logging.error("❌ Invalid or empty face image")
+                logging.error("Invalid or empty face image")
                 return jsonify({"success": False, "message": "Invalid face image"})
             updates.append("face_image = %s")
             params.append(face_image_data)
 
         params.append(user_id)
         query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
-        logging.info(f"🔄 Executing admin user update query: {query}")
+        logging.info(f"Executing admin user update query: {query}")
         cursor.execute(query, tuple(params))
         conn.commit()
-        logging.info("✅ User updated by admin")
+        logging.info("User updated by admin")
         return jsonify({"success": True, "message": "User updated"})
     except mysql.connector.IntegrityError:
-        logging.error("❌ Username or email already exists for admin update")
+        logging.error("Username or email already exists for admin update")
         return jsonify({"success": False, "message": "Username or email already exists"})
     except Exception as e:
-        logging.error(f"❌ Admin user update error: {str(e)}")
+        logging.error(f"Admin user update error: {str(e)}")
         return jsonify({"success": False, "message": f"Error updating user: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -768,32 +804,32 @@ def admin_update_user(user_id):
 @app.route('/upload_rota', methods=['POST'])
 def upload_rota():
     if not session.get('is_admin'):
-        logging.error("❌ Access denied for upload_rota")
+        logging.error("Access denied for upload_rota")
         return jsonify({"success": False, "message": "Access denied"})
 
     file = request.files.get('rota_image')
     if not file:
-        logging.error("❌ No file uploaded for rota")
+        logging.error("No file uploaded for rota")
         return jsonify({"success": False, "message": "No file uploaded"})
 
     rota_image_data = file.read()
     if not rota_image_data:
-        logging.error("❌ Invalid or empty rota image")
+        logging.error("Invalid or empty rota image")
         return jsonify({"success": False, "message": "Invalid rota image"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for upload_rota")
+        logging.error("No database connection for upload_rota")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor()
     try:
         cursor.execute("INSERT INTO rota (rota_image) VALUES (%s)", (rota_image_data,))
         conn.commit()
-        logging.info("✅ Rota uploaded successfully")
+        logging.info("Rota uploaded successfully")
         return jsonify({"success": True, "message": "Rota uploaded successfully"})
     except Exception as e:
-        logging.error(f"❌ Rota upload error: {str(e)}")
+        logging.error(f"Rota upload error: {str(e)}")
         return jsonify({"success": False, "message": f"Error uploading rota: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -803,36 +839,36 @@ def upload_rota():
 @app.route('/send_notification', methods=['POST'])
 def send_notification():
     if not session.get('is_admin'):
-        logging.error("❌ Access denied for send_notification")
+        logging.error("Access denied for send_notification")
         return jsonify({"success": False, "message": "Access denied"})
 
     message = request.form.get('message')
     if not message:
-        logging.error("❌ No message provided for notification")
+        logging.error("No message provided for notification")
         return jsonify({"success": False, "message": "No message provided"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for send_notification")
+        logging.error("No database connection for send_notification")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info("🔍 Fetching non-admin users for notification")
+        logging.info("Fetching non-admin users for notification")
         cursor.execute("SELECT id FROM users WHERE is_admin = 0")
         users = cursor.fetchall()
         if not users:
-            logging.error("❌ No non-admin users found")
+            logging.error("No non-admin users found")
             return jsonify({"success": False, "message": "No non-admin users found"})
 
         for user in users:
-            logging.info(f"🔔 Sending notification to user_id: {user['id']}")
+            logging.info(f"Sending notification to user_id: {user['id']}")
             cursor.execute("INSERT INTO notifications (message, user_id) VALUES (%s, %s)", (message, user['id']))
         conn.commit()
-        logging.info("✅ Notifications sent successfully")
+        logging.info("Notifications sent successfully")
         return jsonify({"success": True, "message": "Notification sent to all users"})
     except Exception as e:
-        logging.error(f"❌ Notification error: {str(e)}")
+        logging.error(f"Notification error: {str(e)}")
         return jsonify({"success": False, "message": f"Error sending notification: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -842,17 +878,17 @@ def send_notification():
 @app.route('/check_notifications', methods=['GET'])
 def check_notifications():
     if 'user_id' not in session or session.get('is_admin'):
-        logging.error("❌ Access denied or admin user for check_notifications")
+        logging.error("Access denied or admin user for check_notifications")
         return jsonify({"success": False, "message": ""})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for check_notifications")
+        logging.error("No database connection for check_notifications")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info(f"🔔 Checking notifications for user_id: {session['user_id']}")
+        logging.info(f"Checking notifications for user_id: {session['user_id']}")
         cursor.execute("""
             SELECT id, message 
             FROM notifications 
@@ -862,15 +898,15 @@ def check_notifications():
         """, (session['user_id'],))
         notification = cursor.fetchone()
         if notification:
-            logging.info(f"🔔 Marking notification as read: id={notification['id']}")
+            logging.info(f"Marking notification as read: id={notification['id']}")
             cursor.execute("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = %s", (notification['id'],))
             conn.commit()
-            logging.info(f"✅ Notification read: {notification['message']}")
+            logging.info(f"Notification read: {notification['message']}")
             return jsonify({"success": True, "message": notification['message']})
-        logging.info("🔔 No unread notifications found")
+        logging.info("No unread notifications found")
         return jsonify({"success": False, "message": ""})
     except Exception as e:
-        logging.error(f"❌ Check notifications error: {str(e)}")
+        logging.error(f"Check notifications error: {str(e)}")
         return jsonify({"success": False, "message": f"Error checking notifications: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -879,38 +915,38 @@ def check_notifications():
 
 @app.route('/admin')
 def admin():
-    logging.info(f"🔍 Accessing admin route with session: {dict(session)}")
+    logging.info(f"Accessing admin route with session: {dict(session)}")
     if not session.get('is_admin'):
         flash("Access denied", "error")
-        logging.error("❌ Access denied for admin route")
+        logging.error("Access denied for admin route")
         return redirect(url_for('login'))
 
     view = request.args.get('view', 'daily')
     search_query = request.args.get('search', '')
-    logging.info(f"🔍 Admin view: {view}, search_query: {search_query}")
+    logging.info(f"Admin view: {view}, search_query: {search_query}")
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for admin")
+        logging.error("No database connection for admin")
         flash("Database connection failed", "error")
         return render_template('admin.html', data=[], view=view, admin_profile=None, users=[], all_attendance=[], rota_image_base64=None)
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info(f"🔍 Fetching admin profile for user_id: {session['user_id']}")
+        logging.info(f"Fetching admin profile for user_id: {session['user_id']}")
         cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         admin_profile = cursor.fetchone()
         admin_profile['face_image_base64'] = base64.b64encode(admin_profile['face_image']).decode('utf-8') if admin_profile and admin_profile['face_image'] else None
-        logging.info(f"🖼️ Admin profile image: {'Found' if admin_profile and admin_profile['face_image'] else 'Not found'}")
+        logging.info(f"Admin profile image: {'Found' if admin_profile and admin_profile['face_image'] else 'Not found'}")
 
-        logging.info("🔍 Fetching non-admin users")
+        logging.info("Fetching non-admin users")
         cursor.execute("SELECT id, username, email, position, face_image FROM users WHERE is_admin = 0")
         users_raw = cursor.fetchall()
         users = []
         for user in users_raw:
             user['face_image_base64'] = base64.b64encode(user['face_image']).decode('utf-8') if user['face_image'] else None
             users.append(user)
-        logging.info(f"👥 Retrieved {len(users)} non-admin users")
+        logging.info(f"Retrieved {len(users)} non-admin users")
 
         if view == 'daily':
             query = """
@@ -952,7 +988,7 @@ def admin():
                 WHERE YEAR(a.login_time) = YEAR(CURDATE())
                 ORDER BY a.login_time DESC
             """
-        logging.info(f"🔍 Executing attendance query for view: {view}")
+        logging.info(f"Executing attendance query for view: {view}")
         cursor.execute(query)
         data = cursor.fetchall()
 
@@ -966,10 +1002,10 @@ def admin():
             else:
                 record['hours_worked'] = "N/A"
                 record['color'] = 'black'
-        logging.info(f"📅 Processed {len(data)} attendance records for view: {view}")
+        logging.info(f"Processed {len(data)} attendance records for view: {view}")
 
         if search_query:
-            logging.info(f"🔍 Executing search query: {search_query}")
+            logging.info(f"Executing search query: {search_query}")
             cursor.execute("""
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
@@ -980,7 +1016,7 @@ def admin():
                 ORDER BY a.login_time DESC
             """, (f"%{search_query}%",))
         else:
-            logging.info("🔍 Fetching all attendance records")
+            logging.info("Fetching all attendance records")
             cursor.execute("""
                 SELECT u.username, u.position, a.id as attendance_id, a.user_id, a.login_time, a.logout_time, 
                        a.login_latitude, a.login_longitude, a.logout_latitude, a.logout_longitude,
@@ -1001,15 +1037,15 @@ def admin():
             else:
                 record['hours_worked'] = "N/A"
                 record['color'] = 'black'
-        logging.info(f"📅 Processed {len(all_attendance)} total attendance records")
+        logging.info(f"Processed {len(all_attendance)} total attendance records")
 
-        logging.info("🔍 Fetching latest rota image for admin")
+        logging.info("Fetching latest rota image for admin")
         cursor.execute("SELECT rota_image FROM rota ORDER BY uploaded_at DESC LIMIT 1")
         rota = cursor.fetchone()
         rota_image_base64 = base64.b64encode(rota['rota_image']).decode('utf-8') if rota and rota['rota_image'] else None
-        logging.info(f"🖼️ Rota image: {'Found' if rota else 'Not found'}")
+        logging.info(f"Rota image: {'Found' if rota else 'Not found'}")
 
-        logging.info("🔍 Fetching read notifications")
+        logging.info("Fetching read notifications")
         cursor.execute("""
             SELECT n.id, n.message, n.created_at, n.read_at, u.username 
             FROM notifications n 
@@ -1018,13 +1054,13 @@ def admin():
             ORDER BY n.read_at DESC
         """)
         read_notifications = cursor.fetchall()
-        logging.info(f"🔔 Retrieved {len(read_notifications)} read notifications")
+        logging.info(f"Retrieved {len(read_notifications)} read notifications")
 
-        logging.info("✅ Rendering admin template")
+        logging.info("Rendering admin template")
         return render_template('admin.html', data=data, view=view, admin_profile=admin_profile, users=users, all_attendance=all_attendance,
                               search_query=search_query, rota_image_base64=rota_image_base64, read_notifications=read_notifications)
     except Exception as e:
-        logging.error(f"❌ Admin route error: {str(e)}")
+        logging.error(f"Admin route error: {str(e)}")
         flash(f"Error loading admin page: {str(e)}", "error")
         return render_template('admin.html', data=[], view=view, admin_profile=None, users=[], all_attendance=[], rota_image_base64=None)
     finally:
@@ -1035,28 +1071,28 @@ def admin():
 @app.route('/update_attendance_status/<int:attendance_id>', methods=['POST'])
 def update_attendance_status(attendance_id):
     if not session.get('is_admin'):
-        logging.error("❌ Access denied for update_attendance_status")
+        logging.error("Access denied for update_attendance_status")
         return jsonify({"success": False, "message": "Access denied"})
 
     status = request.form.get('status')
-    logging.info(f"🔄 Updating attendance status: attendance_id={attendance_id}, status={status}")
+    logging.info(f"Updating attendance status: attendance_id={attendance_id}, status={status}")
     if status not in ['Present', 'Absent']:
-        logging.error("❌ Invalid status provided")
+        logging.error("Invalid status provided")
         return jsonify({"success": False, "message": "Invalid status"})
 
     conn = get_db_connection()
     if not conn:
-        logging.error("❌ No database connection for update_attendance_status")
+        logging.error("No database connection for update_attendance_status")
         return jsonify({"success": False, "message": "Database error"})
 
     cursor = conn.cursor()
     try:
         cursor.execute("UPDATE attendance SET attendance_status = %s WHERE id = %s", (status, attendance_id))
         conn.commit()
-        logging.info("✅ Attendance status updated")
+        logging.info("Attendance status updated")
         return jsonify({"success": True, "message": "Attendance status updated"})
     except Exception as e:
-        logging.error(f"❌ Update attendance status error: {str(e)}")
+        logging.error(f"Update attendance status error: {str(e)}")
         return jsonify({"success": False, "message": f"Error updating attendance status: {str(e)}"})
     finally:
         if conn and conn.is_connected():
@@ -1067,18 +1103,18 @@ def update_attendance_status(attendance_id):
 def view_excel():
     if not session.get('is_admin'):
         flash("Access denied", "error")
-        logging.error("❌ Access denied for view_excel")
+        logging.error("Access denied for view_excel")
         return redirect(url_for('login'))
 
     conn = get_db_connection()
     if not conn:
         flash("Database connection failed", "error")
-        logging.error("❌ No database connection for view_excel")
+        logging.error("No database connection for view_excel")
         return render_template('view_excel.html', table="")
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info("🔍 Fetching attendance data for Excel view")
+        logging.info("Fetching attendance data for Excel view")
         cursor.execute("""
             SELECT u.username, a.login_time, a.logout_time, a.daily_status_submitted, a.attendance_status,
                    TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
@@ -1087,7 +1123,7 @@ def view_excel():
         data = cursor.fetchall()
         if not data:
             flash("No attendance data available", "warning")
-            logging.warning("⚠️ No attendance data available")
+            logging.warning("No attendance data available")
             return render_template('view_excel.html', table="")
 
         for record in data:
@@ -1098,15 +1134,15 @@ def view_excel():
                 record['hours_worked'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
             else:
                 record['hours_worked'] = "N/A"
-        logging.info(f"📅 Processed {len(data)} attendance records for Excel view")
+        logging.info(f"Processed {len(data)} attendance records for Excel view")
 
         df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status_submitted', 'attendance_status', 'hours_worked']]
         html_table = df.to_html(index=False, classes='table table-striped')
-        logging.info("✅ Rendering Excel view template")
+        logging.info("Rendering Excel view template")
         return render_template('view_excel.html', table=html_table)
     except Exception as e:
         flash(f"Error generating table: {str(e)}", "error")
-        logging.error(f"❌ Error generating Excel table: {str(e)}")
+        logging.error(f"Error generating Excel table: {str(e)}")
         return render_template('view_excel.html', table="")
     finally:
         if conn and conn.is_connected():
@@ -1117,27 +1153,27 @@ def view_excel():
 def export_page():
     if not session.get('is_admin'):
         flash("Access denied", "error")
-        logging.error("❌ Access denied for export_page")
+        logging.error("Access denied for export_page")
         return redirect(url_for('login'))
-    logging.info("📄 Rendering export page")
+    logging.info("Rendering export page")
     return render_template('export.html')
 
 @app.route('/export')
 def export():
     if not session.get('is_admin'):
         flash("Access denied", "error")
-        logging.error("❌ Access denied for export")
+        logging.error("Access denied for export")
         return redirect(url_for('login'))
 
     conn = get_db_connection()
     if not conn:
         flash("Database connection failed", "error")
-        logging.error("❌ No database connection for export")
+        logging.error("No database connection for export")
         return redirect(url_for('admin'))
 
     cursor = conn.cursor(dictionary=True)
     try:
-        logging.info("🔍 Fetching attendance data for Excel export")
+        logging.info("Fetching attendance data for Excel export")
         cursor.execute("""
             SELECT u.username, a.login_time, a.logout_time, a.daily_status_submitted, a.attendance_status,
                    TIMESTAMPDIFF(SECOND, a.login_time, COALESCE(a.logout_time, NOW())) as seconds_worked
@@ -1146,7 +1182,7 @@ def export():
         data = cursor.fetchall()
         if not data:
             flash("No attendance data to export", "warning")
-            logging.warning("⚠️ No attendance data to export")
+            logging.warning("No attendance data to export")
             return redirect(url_for('admin'))
 
         for record in data:
@@ -1157,7 +1193,7 @@ def export():
                 record['hours_worked'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
             else:
                 record['hours_worked'] = "N/A"
-        logging.info(f"📅 Processed {len(data)} attendance records for export")
+        logging.info(f"Processed {len(data)} attendance records for export")
 
         df = pd.DataFrame(data)[['username', 'login_time', 'logout_time', 'daily_status_submitted', 'attendance_status', 'hours_worked']]
         output = BytesIO()
@@ -1171,11 +1207,11 @@ def export():
             worksheet.set_column('E:E', 15)
             worksheet.set_column('F:F', 15)
         output.seek(0)
-        logging.info("✅ Excel file generated successfully")
+        logging.info("Excel file generated successfully")
         return send_file(output, download_name='attendance.xlsx', as_attachment=True)
     except Exception as e:
         flash(f"Error generating Excel file: {str(e)}", "error")
-        logging.error(f"❌ Error generating Excel file: {str(e)}")
+        logging.error(f"Error generating Excel file: {str(e)}")
         return redirect(url_for('admin'))
     finally:
         if conn and conn.is_connected():
@@ -1184,7 +1220,7 @@ def export():
 
 @app.route('/logout')
 def logout():
-    logging.info("🔐 Logging out user, clearing session")
+    logging.info("Logging out user, clearing session")
     session.clear()
     flash("Logged out successfully", "success")
     return redirect(url_for('login'))
@@ -1193,11 +1229,11 @@ if __name__ == '__main__':
     # Ensure uploads directory exists
     uploads_dir = os.path.join(app.static_folder, 'Uploads')
     os.makedirs(uploads_dir, exist_ok=True)
-    logging.info("🛠️ Creating uploads directory if not exists")
+    logging.info("Creating uploads directory if not exists")
     
     # Initialize database
     init_db()
     
     # Start Flask app
-    logging.info("🚀 Starting Flask application on port 8000")
+    logging.info("Starting Flask application on port 8000")
     app.run(debug=False, host='0.0.0.0', port=8000)
