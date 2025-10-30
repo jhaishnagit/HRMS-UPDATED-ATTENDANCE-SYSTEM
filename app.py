@@ -30,7 +30,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "default_secret_key_123")  #
 db_config = {
     "host": os.environ.get("DB_HOST", "localhost"),
     "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", "jIAAbnxS5vq7[kE]"),
+    "password": os.environ.get("DB_PASSWORD", "jhaishna"),
     "database": os.environ.get("DB_NAME", "gps_face_db"),
     "port": int(os.environ.get("DB_PORT", 3306))
 }
@@ -1237,3 +1237,4 @@ if __name__ == '__main__':
     # Start Flask app
     logging.info("Starting Flask application on port 8000")
     app.run(debug=False, host='0.0.0.0', port=8000)
+
