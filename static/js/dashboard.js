@@ -48,48 +48,54 @@ document.addEventListener("DOMContentLoaded", function () {
     const profilePic = document.getElementById('profile-pic');
     const emailDisplay = document.getElementById('email-display');
 
-    editProfileBtn.addEventListener('click', () => {
-        emailInput.classList.add('active');
-        positionInput.classList.add('active');
-        newFaceImageInput.style.display = 'block';
-        emailDisplay.style.display = 'none';
-        editProfileBtn.style.display = 'none';
-        saveProfileBtn.style.display = 'block';
-    });
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', () => {
+            emailInput.classList.add('active');
+            positionInput.classList.add('active');
+            newFaceImageInput.style.display = 'block';
+            emailDisplay.style.display = 'none';
+            editProfileBtn.style.display = 'none';
+            saveProfileBtn.style.display = 'block';
+        });
+    }
 
-    newFaceImageInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            profilePic.src = URL.createObjectURL(file);
-        }
-    });
+    if (newFaceImageInput) {
+        newFaceImageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                profilePic.src = URL.createObjectURL(file);
+            }
+        });
+    }
 
-    saveProfileBtn.addEventListener('click', () => {
-        const formData = new FormData();
-        formData.append('email', emailInput.value);
-        formData.append('position', positionInput.value);
-        if (newFaceImageInput.files[0]) {
-            formData.append('face_image', newFaceImageInput.files[0]);
-        }
-        fetch('/update_profile', { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Profile updated successfully!');
-                    emailDisplay.textContent = emailInput.value;
-                    emailInput.classList.remove('active');
-                    positionInput.classList.remove('active');
-                    newFaceImageInput.style.display = 'none';
-                    emailDisplay.style.display = 'inline';
-                    editProfileBtn.style.display = 'block';
-                    saveProfileBtn.style.display = 'none';
-                    location.reload();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => console.error('Error updating profile:', error));
-    });
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', () => {
+            const formData = new FormData();
+            formData.append('email', emailInput.value);
+            formData.append('position', positionInput.value);
+            if (newFaceImageInput.files[0]) {
+                formData.append('face_image', newFaceImageInput.files[0]);
+            }
+            fetch('/update_profile', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Profile updated successfully!');
+                        emailDisplay.textContent = emailInput.value;
+                        emailInput.classList.remove('active');
+                        positionInput.classList.remove('active');
+                        newFaceImageInput.style.display = 'none';
+                        emailDisplay.style.display = 'inline';
+                        editProfileBtn.style.display = 'block';
+                        saveProfileBtn.style.display = 'none';
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error updating profile:', error));
+        });
+    }
 
     // Camera Functionality
     const video = document.getElementById('video');
@@ -101,16 +107,43 @@ document.addEventListener("DOMContentLoaded", function () {
     const canvas = document.createElement('canvas');
 
     function startCamera() {
+        console.log('Start camera button clicked');
+        if (!window.isSecureContext) {
+            alert('Camera access requires a secure connection (HTTPS or localhost). Please ensure your site is served over HTTPS.');
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('getUserMedia is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.');
+            return;
+        }
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(s => {
+                console.log('Camera stream obtained successfully');
                 stream = s;
-                video.srcObject = stream;
-                startCameraBtn.style.display = 'none';
-                stopCameraBtn.style.display = 'block';
+                if (video) {
+                    video.srcObject = stream;
+                }
+                if (startCameraBtn) startCameraBtn.style.display = 'none';
+                if (stopCameraBtn) stopCameraBtn.style.display = 'block';
                 if (captureLoginBtn) captureLoginBtn.style.display = 'block';
                 if (captureLogoutBtn) captureLogoutBtn.style.display = 'block';
             })
-            .catch(err => alert('Error accessing camera: ' + err.message));
+            .catch(err => {
+                console.error('Camera error:', err);
+                let msg = 'Error accessing camera: ' + err.message;
+                if (err.name === 'NotAllowedError') {
+                    msg = 'Camera access was denied. Please allow camera permissions in your browser settings and try again.';
+                } else if (err.name === 'NotFoundError') {
+                    msg = 'No camera device found. Please ensure a camera is connected.';
+                } else if (err.name === 'NotReadableError') {
+                    msg = 'Camera is being used by another application. Please close other apps using the camera.';
+                } else if (err.name === 'OverconstrainedError') {
+                    msg = 'Camera constraints cannot be satisfied. Please try again.';
+                } else if (err.name === 'SecurityError') {
+                    msg = 'Security error occurred. Ensure the page is served over HTTPS.';
+                }
+                alert(msg);
+            });
     }
 
     if (startCameraBtn) {
@@ -119,39 +152,99 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (stopCameraBtn) {
         stopCameraBtn.addEventListener('click', () => {
+            console.log('Stop camera button clicked');
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-                startCameraBtn.style.display = 'block';
-                stopCameraBtn.style.display = 'none';
-                if (captureLoginBtn) captureLoginBtn.style.display = 'none';
-                if (captureLogoutBtn) captureLogoutBtn.style.display = 'none';
+                stream = null;
             }
+            if (video) {
+                video.srcObject = null;
+            }
+            if (startCameraBtn) startCameraBtn.style.display = 'block';
+            if (stopCameraBtn) stopCameraBtn.style.display = 'none';
+            if (captureLoginBtn) captureLoginBtn.style.display = 'none';
+            if (captureLogoutBtn) captureLogoutBtn.style.display = 'none';
         });
+    }
+
+    function getLocation(successCallback, errorCallback) {
+        if (!navigator.geolocation) {
+            errorCallback(new Error('Geolocation is not supported by this browser.'));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                successCallback({ lat, lng });
+            },
+            (error) => {
+                let message = 'Error accessing location: ';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        message += 'Location access denied. Please allow location access to proceed with attendance.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message += 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        message += 'Location request timed out.';
+                        break;
+                    default:
+                        message += 'An unknown error occurred.';
+                        break;
+                }
+                errorCallback(new Error(message));
+            },
+            { timeout: 10000, enableHighAccuracy: true }
+        );
+    }
+
+    function captureAndSubmit(endpoint, isLogin) {
+        if (!video || !video.videoWidth || !video.videoHeight) {
+            alert('Please ensure the camera is active and visible before capturing.');
+            return;
+        }
+
+        getLocation(
+            (geoPos) => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob((blob) => {
+                    const formData = new FormData();
+                    formData.append('face_image', blob, 'capture.jpg');
+                    formData.append('latitude', geoPos.lat);
+                    formData.append('longitude', geoPos.lng);
+                    fetch(endpoint, { method: 'POST', body: formData })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (stopCameraBtn) stopCameraBtn.click();
+                            if (data.success) {
+                                const time = new Date().toLocaleString();
+                                const action = isLogin ? 'Login' : 'Logout';
+                                const photoKey = isLogin ? 'login_photo' : 'logout_photo';
+                                alert(`${action} Successful! Time: ${time}\nAttendance Submitted\nPhoto captured\nLocation: ${geoPos.lat.toFixed(6)}, ${geoPos.lng.toFixed(6)}`);
+                                window.location.reload();
+                            } else {
+                                alert(data.message || 'Capture failed.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error(`Error capturing ${isLogin ? 'login' : 'logout'}:`, error);
+                            alert('Network error during capture. Please try again.');
+                        });
+                }, 'image/jpeg');
+            },
+            (error) => {
+                alert(error.message);
+            }
+        );
     }
 
     if (captureLoginBtn) {
         captureLoginBtn.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('face_image', blob, 'capture.jpg');
-                fetch('/login_photo', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(data => {
-                        stopCameraBtn.click();
-                        if (data.success) {
-                            const loginTime = new Date().toLocaleString();
-                            alert(`Login Successful! Time: ${loginTime}\nAttendance Submitted\nPhoto: ${data.login_photo}`);
-                            location.reload();
-                        } else {
-                            alert(data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error capturing login:', error));
-            }, 'image/jpeg');
+            captureAndSubmit('/login_photo', true);
         });
     }
 
@@ -173,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         alert('Daily status submitted successfully!');
                         location.reload();
                     } else {
-                        alert(data.message);
+                        alert(data.message || 'Submission failed.');
                     }
                 })
                 .catch(error => console.error('Error submitting status:', error));
@@ -182,37 +275,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (captureLogoutBtn) {
         captureLogoutBtn.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('face_image', blob, 'capture.jpg');
-                fetch('/logout_photo', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(data => {
-                        stopCameraBtn.click();
-                        if (data.success) {
-                            const logoutTime = new Date().toLocaleString();
-                            alert(`Logout Successful! Time: ${logoutTime}\nAttendance Submitted\nPhoto: ${data.logout_photo}`);
-                            location.reload();
-                        } else {
-                            alert(data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error capturing logout:', error));
-            }, 'image/jpeg');
+            captureAndSubmit('/logout_photo', false);
         });
     }
 
     // Leave Request
     const submitLeaveBtn = document.getElementById('submit-leave-btn');
-    submitLeaveBtn.addEventListener('click', () => {
-        const startDate = document.getElementById('leave-start').value;
-        const endDate = document.getElementById('leave-end').value;
-        const leaveType = document.getElementById('leave-type').value;
-        alert(`Leave Request Submitted!\nStart: ${startDate}\nEnd: ${endDate}\nType: ${leaveType}`);
-    });
+    if (submitLeaveBtn) {
+        submitLeaveBtn.addEventListener('click', () => {
+            const startDate = document.getElementById('leave-start').value;
+            const endDate = document.getElementById('leave-end').value;
+            const leaveType = document.getElementById('leave-type').value;
+            if (!startDate || !endDate || !leaveType) {
+                alert('Please fill in all leave request fields.');
+                return;
+            }
+            alert(`Leave Request Submitted!\nStart: ${startDate}\nEnd: ${endDate}\nType: ${leaveType}`);
+        });
+    }
 
     // Notification Polling
     function checkNotifications() {
