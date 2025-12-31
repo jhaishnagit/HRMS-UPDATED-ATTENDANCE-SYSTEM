@@ -65,29 +65,3 @@ CREATE TABLE IF NOT Exists attendance (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS leaves (
-    id INT NOT NULL AUTO_INCREMENT,
-    user_id INT,
-    leave_type ENUM('Sick Leave', 'Emergency Leave', 'Vocational Leave'),
-    start_date DATE,
-    end_date DATE,
-    reason TEXT,
-    status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Add new table for leave balance
-CREATE TABLE IF NOT EXISTS leave_balance (
-    user_id INT PRIMARY KEY,
-    paid_leaves INT DEFAULT 0,
-    last_updated_month INT DEFAULT 0,
-    last_updated_year INT DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Update leaves table (if needed)
-ALTER TABLE leaves 
-MODIFY leave_type ENUM('Paid Leave', 'Sick Leave', 'Emergency Leave');
