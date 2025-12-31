@@ -1,3 +1,4 @@
+<!-- templates/admin.html (updated URLs for blueprint) -->
 <!-- templates/admin.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -46,9 +47,10 @@
                     <li class="active" data-section="attendance"><a href="#" class="active"><i class="fas fa-clock"></i> <span class="sidebar-text">Attendance</span></a></li>
                     <li data-section="users"><a href="#"><i class="fas fa-users"></i> <span class="sidebar-text">Manage Users</span></a></li>
                     <li data-section="rota"><a href="#"><i class="fas fa-calendar-week"></i> <span class="sidebar-text">Upload Rota</span></a></li>
-                    <li><a href="/register"><i class="fas fa-user"></i>New User</a></li>
+                    <li><a href="{{ url_for('admin.admin_leaves') }}"><i class="fas fa-umbrella-beach"></i> <span class="sidebar-text">Manage Leaves</span></a></li>
+                    <li><a href="{{ url_for('register') }}"><i class="fas fa-user"></i>New User</a></li>
                     <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span class="sidebar-text">Notifications</span></a></li>
-                    <li data-section="export"><a href="{{ url_for('export_page') }}"><i class="fas fa-file-export"></i> <span class="sidebar-text">Export Data</span></a></li>
+                    <li data-section="export"><a href="{{ url_for('admin.export_page') }}"><i class="fas fa-file-export"></i> <span class="sidebar-text">Export Data</span></a></li>
                     <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> <span class="sidebar-text">Logout</span></a></li>
                 </ul>
             </div>

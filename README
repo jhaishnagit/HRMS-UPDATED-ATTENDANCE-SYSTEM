@@ -1,23 +1,11 @@
-# Attendance Management System Documentation
-
 ## Introduction
 
 This documentation provides a comprehensive overview of the Attendance Management System, a web-based application designed to track employee attendance using face recognition, GPS location, daily status reports, and administrative features like user management, rota scheduling, notifications, and data exports. The system supports both employee (user) and admin roles.
 
 The application is built with Flask as the backend framework and uses MySQL for data storage. It includes features for secure login/logout, password recovery, attendance tracking, and reporting. Employees can log in/out using facial recognition and submit daily updates, while admins can manage users, upload rotas, send notifications, and export attendance data.
 
-Key Features:
-- **Face Recognition Attendance**: Uses camera for login/logout verification.
-- **GPS Location Tracking**: Records location during login/logout.
-- **Daily Status Reports**: Employees submit reports before logout.
-- **Admin Dashboard**: Manage users, attendance, rotas, and notifications.
-- **Notifications**: Admins send system-wide messages; users receive alerts.
-- **Rota Management**: Upload and view weekly schedules.
-- **Exports**: Generate Excel reports of attendance.
-- **Security**: Hashed passwords, OTP-based password reset.
-
 The system is designed for organizations needing secure, automated attendance tracking. It assumes a local/development setup but can be deployed to production with adjustments (e.g., secure keys, hosting).
-
+ 
 ## Tech Stack
 
 ### Backend
