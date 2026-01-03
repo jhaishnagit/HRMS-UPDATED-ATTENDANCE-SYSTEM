@@ -1,3 +1,4 @@
+// static/js/dashboard.js
 document.addEventListener("DOMContentLoaded", function () {
     const navItems = document.querySelectorAll('.sidebar-nav li[data-section]');
     const sections = document.querySelectorAll('.content-section');
@@ -50,8 +51,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
-            emailInput.classList.add('active');
-            positionInput.classList.add('active');
+            emailInput.style.display = 'block';
+            positionInput.style.display = 'block';
             newFaceImageInput.style.display = 'block';
             emailDisplay.style.display = 'none';
             editProfileBtn.style.display = 'none';
@@ -82,8 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.success) {
                         alert('Profile updated successfully!');
                         emailDisplay.textContent = emailInput.value;
-                        emailInput.classList.remove('active');
-                        positionInput.classList.remove('active');
+                        emailInput.style.display = 'none';
+                        positionInput.style.display = 'none';
                         newFaceImageInput.style.display = 'none';
                         emailDisplay.style.display = 'inline';
                         editProfileBtn.style.display = 'block';
@@ -97,16 +98,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Camera Functionality
+    // Camera Functionality for Login
     const video = document.getElementById('video');
     const startCameraBtn = document.getElementById('start-camera-btn');
     const stopCameraBtn = document.getElementById('stop-camera-btn');
     const captureLoginBtn = document.getElementById('capture-login-btn');
-    const captureLogoutBtn = document.getElementById('capture-logout-btn');
-    const submitStatusBtn = document.getElementById('submit-status-btn');
     const canvas = document.createElement('canvas');
 
-    function startCamera() {
+    function startCameraLogin() {
         console.log('Start camera button clicked');
         if (!window.isSecureContext) {
             alert('Camera access requires a secure connection (HTTPS or localhost). Please ensure your site is served over HTTPS.');
@@ -126,7 +125,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (startCameraBtn) startCameraBtn.style.display = 'none';
                 if (stopCameraBtn) stopCameraBtn.style.display = 'block';
                 if (captureLoginBtn) captureLoginBtn.style.display = 'block';
-                if (captureLogoutBtn) captureLogoutBtn.style.display = 'block';
             })
             .catch(err => {
                 console.error('Camera error:', err);
@@ -147,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (startCameraBtn) {
-        startCameraBtn.addEventListener('click', startCamera);
+        startCameraBtn.addEventListener('click', startCameraLogin);
     }
 
     if (stopCameraBtn) {
@@ -163,7 +161,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (startCameraBtn) startCameraBtn.style.display = 'block';
             if (stopCameraBtn) stopCameraBtn.style.display = 'none';
             if (captureLoginBtn) captureLoginBtn.style.display = 'none';
-            if (captureLogoutBtn) captureLogoutBtn.style.display = 'none';
         });
     }
 
@@ -201,16 +198,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function captureAndSubmit(endpoint, isLogin) {
-        if (!video || !video.videoWidth || !video.videoHeight) {
+        const videoElement = isLogin ? document.getElementById('video') : document.getElementById('video-logout');
+        if (!videoElement || !videoElement.videoWidth || !videoElement.videoHeight) {
             alert('Please ensure the camera is active and visible before capturing.');
             return;
         }
 
         getLocation(
             (geoPos) => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                canvas.getContext('2d').drawImage(videoElement, 0, 0);
                 canvas.toBlob((blob) => {
                     const formData = new FormData();
                     formData.append('face_image', blob, 'capture.jpg');
@@ -248,28 +246,43 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    if (submitStatusBtn) {
-        submitStatusBtn.addEventListener('click', () => {
-            const dailyStatus = document.getElementById('daily-status').value;
-            if (!dailyStatus) {
-                alert('Please enter your daily status report.');
-                return;
-            }
-            fetch('/submit_daily_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `daily_status=${encodeURIComponent(dailyStatus)}`
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Daily status submitted successfully!');
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Submission failed.');
+    // Camera Functionality for Logout
+    const videoLogout = document.getElementById('video-logout');
+    const startCameraLogoutBtn = document.getElementById('start-camera-logout-btn');
+    const stopCameraLogoutBtn = document.getElementById('stop-camera-logout-btn');
+    const captureLogoutBtn = document.getElementById('capture-logout-btn');
+
+    if (startCameraLogoutBtn) {
+        startCameraLogoutBtn.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(s => {
+                    stream = s;
+                    if (videoLogout) {
+                        videoLogout.srcObject = stream;
                     }
+                    startCameraLogoutBtn.style.display = 'none';
+                    stopCameraLogoutBtn.style.display = 'block';
+                    captureLogoutBtn.style.display = 'block';
                 })
-                .catch(error => console.error('Error submitting status:', error));
+                .catch(err => {
+                    console.error('Camera error for logout:', err);
+                    alert('Error accessing camera: ' + err.message);
+                });
+        });
+    }
+
+    if (stopCameraLogoutBtn) {
+        stopCameraLogoutBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            if (videoLogout) {
+                videoLogout.srcObject = null;
+            }
+            startCameraLogoutBtn.style.display = 'block';
+            stopCameraLogoutBtn.style.display = 'none';
+            captureLogoutBtn.style.display = 'none';
         });
     }
 
@@ -279,20 +292,76 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Leave Request
-    const submitLeaveBtn = document.getElementById('submit-leave-btn');
-    if (submitLeaveBtn) {
-        submitLeaveBtn.addEventListener('click', () => {
-            const startDate = document.getElementById('leave-start').value;
-            const endDate = document.getElementById('leave-end').value;
-            const leaveType = document.getElementById('leave-type').value;
-            if (!startDate || !endDate || !leaveType) {
-                alert('Please fill in all leave request fields.');
-                return;
-            }
-            alert(`Leave Request Submitted!\nStart: ${startDate}\nEnd: ${endDate}\nType: ${leaveType}`);
-        });
+// Daily Status Submission (FIXED)
+const submitStatusBtn = document.getElementById('submit-status-btn');
+
+if (submitStatusBtn) {
+    submitStatusBtn.addEventListener('click', () => {
+        const dailyStatus = document.getElementById('daily-status').value;
+        if (!dailyStatus) {
+            alert('Please enter your daily status report.');
+            return;
+        }
+        fetch('/submit_daily_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `daily_status=${encodeURIComponent(dailyStatus)}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Daily status submitted successfully!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Submission failed.');
+                }
+            })
+            .catch(error => console.error('Error submitting status:', error));
+    });
+}
+
+// Leave Application with professional feedback
+document.getElementById('leave-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const type = document.getElementById('leave-type').value;
+    const start = document.getElementById('leave-start').value;
+    const end = document.getElementById('leave-end').value;
+    const reason = document.getElementById('leave-reason').value;
+
+    if (!type || !start || !end || !reason) {
+        alert('Please fill all fields');
+        return;
     }
+
+    const btn = document.getElementById('submit-leave-btn');
+    const spinner = btn.querySelector('.spinner-border');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+    const formData = new FormData();
+    formData.append('leave_type', type);
+    formData.append('start_date', start);
+    formData.append('end_date', end);
+    formData.append('reason', reason);
+
+    fetch('/apply_leave', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                document.getElementById('leave-form').reset();
+                location.reload();
+            }
+        })
+        .catch(() => alert('Network error'))
+        .finally(() => {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            btn.innerHTML = 'Submit Leave Request';
+        });
+});
 
     // Notification Polling
     function checkNotifications() {
