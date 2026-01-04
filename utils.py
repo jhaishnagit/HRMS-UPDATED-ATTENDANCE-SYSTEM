@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 def send_email(to_email, subject, body):
     sender = os.environ.get("SMTP_SENDER")
     password = os.environ.get("SMTP_PASSWORD")
-    server_host = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    server_host = os.environ.get("SMTP_SERVER", "smtp.zoho.com")
     server_port = int(os.environ.get("SMTP_PORT", 587))
 
     if not sender or not password:
