@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Attendance System</title>
+    <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            width: 320px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 45%;
+        }
+        .admin-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .user-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .modal-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="{{ url_for('static', filename='uploads/logo.jpeg') }}" alt="Logo">
+    </div>
+
+    <div class="container" style="display: none;">
+        <div class="form-box">
+            <img src="{{ url_for('static', filename='uploads/logo.jpeg') }}" alt="Login Image">
+            <h2>Login</h2>
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+            <form method="POST" id="loginForm" action="{{ url_for('auth.login') }}">
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <p class="redirect">
+                <a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a>
+                <!-- <a href="{{ url_for('auth.register') }}">Register</a> -->
+            </p>
+        </div>
+    </div>
+
+    <!-- Admin Role Selection Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <h3>You are an Admin</h3>
+            <p>Select your dashboard:</p>
+            <div class="modal-buttons">
+                <button class="modal-btn admin-btn" onclick="chooseDashboard('admin')">Admin</button>
+                <button class="modal-btn user-btn" onclick="chooseDashboard('user')">User</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
