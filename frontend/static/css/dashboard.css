@@ -638,3 +638,844 @@ body {
 .leave-card:hover {
     transform: translateY(-5px);
 }
+
+/* ============================================================
+   LEAVES SECTION v2 CSS
+   Add to bottom of dashboard.css
+   Replaces previous leave CSS completely
+   ============================================================ */
+
+/* ── Remove any top border/line from leaves section ── */
+#leaves {
+    border-top: none !important;
+    padding-top: 0 !important;
+}
+
+#leaves::before {
+    display: none !important;
+}
+
+/* ── Hero Stats ── */
+.leave-hero {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.leave-stat-card {
+    position: relative;
+    border-radius: 18px;
+    padding: 22px 24px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    overflow: hidden;
+    cursor: default;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.leave-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.18);
+}
+
+.leave-stat-card.comp  { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+.leave-stat-card.avail { background: linear-gradient(135deg, #059669, #047857); }
+.leave-stat-card.used  { background: linear-gradient(135deg, #dc2626, #b91c1c); cursor: pointer; }
+
+.leave-stat-ring {
+    position: absolute;
+    right: -24px;
+    top: -24px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 22px solid rgba(255,255,255,0.1);
+    pointer-events: none;
+}
+
+.leave-stat-icon {
+    font-size: 26px;
+    opacity: 0.9;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.leave-stat-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.leave-stat-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.88;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.leave-stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.leave-stat-cta {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 0.72rem;
+    opacity: 0.82;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── Main Panel ── */
+.leave-panel {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.07);
+    overflow: hidden;
+    border: 1px solid #e8ecf0;
+}
+
+.leave-panel-header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.leave-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.leave-cycle-badge {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.leave-panel-body {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 0;
+}
+
+/* ── Apply Form ── */
+.leave-apply-col {
+    border-right: 1px solid #eef0f4;
+    padding: 28px 24px;
+}
+
+.leave-form-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.leave-info-bar,
+.leave-warn-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.83rem;
+    margin-bottom: 10px;
+}
+
+.leave-info-bar {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.leave-warn-bar {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.lf-group {
+    margin-bottom: 14px;
+}
+
+.lf-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.lf-select-wrap {
+    position: relative;
+}
+
+.lf-select {
+    width: 100%;
+    padding: 10px 36px 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    background: #f9fafb;
+    color: #1f2937;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+}
+
+.lf-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    background: #fff;
+}
+
+.lf-select-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+
+.lf-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ── BEAUTIFUL DATE INPUT ── */
+.lf-date-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f0f4ff;
+    border: 1.5px solid #c7d7fd;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lf-date-wrap:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.14);
+    background: #fff;
+}
+
+.lf-date-icon {
+    padding: 0 10px 0 13px;
+    color: #3b82f6;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.lf-date-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 12px 10px 0;
+    font-size: 0.88rem;
+    color: #1f2937;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.lf-date-input:focus {
+    outline: none;
+}
+
+/* Style the browser date picker button/icon */
+.lf-date-input::-webkit-calendar-picker-indicator {
+    background-image: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%233b82f6' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E") center/16px no-repeat;
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 4px;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+    opacity: 0.8;
+}
+
+.lf-date-input::-webkit-calendar-picker-indicator:hover {
+    background-color: rgba(59,130,246,0.12);
+    opacity: 1;
+}
+
+/* Date input value color */
+.lf-date-input:not(:placeholder-shown) {
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+.lf-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    background: #f9fafb;
+    color: #1f2937;
+    resize: vertical;
+    font-family: inherit;
+    min-height: 90px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lf-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    background: #fff;
+}
+
+.lf-submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+}
+
+.lf-submit-btn:hover {
+    background: linear-gradient(135deg, #1e40af, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+}
+
+.lf-submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Recent History ── */
+.leave-history-col {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.leave-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.leave-history-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin: 0;
+}
+
+.leave-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leave-item {
+    background: #f8fafc;
+    border: 1px solid #e8ecf0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.leave-item:hover {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(59,130,246,0.1);
+}
+
+.leave-item-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    min-width: 130px;
+}
+
+.leave-type-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-paid      { background: #10b981; }
+.dot-sick      { background: #f59e0b; }
+.dot-emergency { background: #ef4444; }
+
+.leave-item-dates {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    flex: 1;
+}
+
+.date-arrow { color: #9ca3af; }
+
+.leave-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.meta-chip {
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.chip-days   { background: #eff6ff; color: #1d4ed8; }
+.chip-paid   { background: #d1fae5; color: #065f46; }
+.chip-unpaid { background: #fee2e2; color: #991b1b; }
+
+.leave-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.badge-approved { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-pending  { background: #fef3c7; color: #92400e; }
+
+.leave-more-btn {
+    width: 100%;
+    padding: 11px;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    color: #3b82f6;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.leave-more-btn:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.leave-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.leave-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 24px;
+    color: #cbd5e1;
+}
+
+.leave-empty p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+/* ── Leave History Modal ── */
+.lhm-content {
+    border-radius: 20px !important;
+    overflow: hidden;
+    border: none !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.2) !important;
+}
+
+.lhm-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    border: none !important;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lhm-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.lhm-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Export Button ── */
+.lhm-export-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    color: #fff;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+}
+
+.lhm-export-btn:hover {
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.6);
+    transform: translateY(-1px);
+}
+
+.lhm-export-btn:active {
+    transform: translateY(0);
+}
+
+.lhm-export-btn i {
+    font-size: 0.88rem;
+}
+
+.lhm-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.88rem;
+}
+
+.lhm-close:hover { background: rgba(255,255,255,0.28); }
+
+.lhm-body {
+    padding: 28px;
+    background: #f8fafc;
+}
+
+.lhm-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.lhm-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: lhm-spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes lhm-spin { to { transform: rotate(360deg); } }
+
+.lhm-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.lhm-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.lhm-chart-card {
+    background: #fff;
+    border: 1px solid #e8ecf0;
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.lhm-chart-card h6 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.lhm-chart-card h6 i { color: #3b82f6; }
+
+.lhm-table-wrap {
+    background: #fff;
+    border: 1px solid #e8ecf0;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.lhm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.lhm-table thead tr {
+    background: #1e3a8a;
+    color: #fff;
+}
+
+.lhm-table th {
+    padding: 12px 16px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-align: left;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+}
+
+.lhm-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+}
+
+.lhm-table tbody tr:last-child { border-bottom: none; }
+.lhm-table tbody tr:hover { background: #f8fafc; }
+
+.lhm-table td {
+    padding: 13px 16px;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.lhm-error {
+    text-align: center;
+    padding: 60px 20px;
+    color: #ef4444;
+}
+
+.lhm-error i {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .leave-panel-body { grid-template-columns: 1fr; }
+    .leave-apply-col { border-right: none; border-bottom: 1px solid #eef0f4; }
+    .lhm-charts { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .leave-hero { grid-template-columns: 1fr; gap: 12px; }
+    .lf-row { grid-template-columns: 1fr; }
+    .leave-item { flex-direction: column; align-items: flex-start; }
+    .leave-item-meta { margin-left: 0; }
+    .leave-panel-header { flex-direction: column; align-items: flex-start; }
+    .lhm-body { padding: 16px; }
+    .lhm-charts { grid-template-columns: 1fr; }
+    .lhm-export-btn span { display: none; }
+}
+/* ================================================================
+   HOLIDAY TABLE STYLES
+   Add this block to both:
+     frontend/static/css/dashboard.css
+     frontend/static/css/admin.css
+   ================================================================ */
+
+/* ── Dashboard: Holiday wrapper ── */
+.holiday-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    margin-top: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── The generated pandas table ── */
+.holiday-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    font-family: 'Roboto', sans-serif;
+    background: #fff;
+}
+
+.holiday-data-table thead tr {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: #fff;
+}
+
+.holiday-data-table thead th {
+    padding: 13px 18px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    white-space: nowrap;
+}
+
+.holiday-data-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+}
+
+.holiday-data-table tbody tr:hover {
+    background: #eff6ff;
+}
+
+.holiday-data-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.holiday-data-table tbody tr:nth-child(even):hover {
+    background: #eff6ff;
+}
+
+.holiday-data-table tbody td {
+    padding: 11px 18px;
+    color: #334155;
+    vertical-align: middle;
+    border: none;
+}
+
+/* First column (date/index) bold accent */
+.holiday-data-table tbody td:first-child {
+    font-weight: 600;
+    color: #1e40af;
+}
+
+/* ── Empty state (no holiday uploaded yet) ── */
+.holiday-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+    text-align: center;
+    gap: 8px;
+}
+
+.holiday-empty i {
+    font-size: 3rem;
+    color: #cbd5e1;
+}
+
+.holiday-empty p {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.holiday-empty span {
+    font-size: 0.85rem;
+}
+
+/* ── Admin preview wrapper ── */
+.holiday-preview-wrap {
+    border-radius: 10px;
+    overflow-x: auto;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-top: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+/* Sticky header in admin preview */
+.holiday-preview-wrap .holiday-data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

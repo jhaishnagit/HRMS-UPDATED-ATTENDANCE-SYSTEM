@@ -8,3 +8,5 @@ geocoder
 openpyxl
 pillow
 dlib
+python-dotenv
+pip install face_recognition opencv-python numpy Pillow

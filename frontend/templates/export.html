@@ -3,18 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Export Attendance</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Export Attendance Data</title>
+    <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <div class="container mt-5">
-        <h1>Export Attendance Data</h1>
-        <p>Click the button below to download the attendance data as an Excel file.</p>
-        <a href="{{ url_for('export') }}" class="btn btn-primary">Download Attendance Excel</a>
-        <br><br>
-        <a href="{{ url_for('view_excel') }}" class="btn btn-info">View Attendance Data</a>
-        <a href="{{ url_for('admin') }}" class="btn btn-secondary">Back to Admin Dashboard</a>
+<body class="export-page">
+
+    <div class="export-orb"></div>
+
+    <a href="{{ url_for('admin.admin') }}" class="back-btn back-btn-fixed">
+        <i class="fas fa-arrow-left"></i> Admin Dashboard
+    </a>
+
+    <div class="export-card">
+
+        <div class="export-header">
+            <div class="header-icon">
+                <i class="fas fa-file-export"></i>
+            </div>
+            <div class="header-text">
+                <h1>Export Attendance</h1>
+                <p>Download or preview employee attendance records</p>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-pill">
+                <span class="stat-val">XLS</span>
+                <span class="stat-lbl">Excel Format</span>
+            </div>
+            <div class="stat-pill">
+                <span class="stat-val">
+                    <i class="fas fa-users" style="font-size:1rem;color:#059669"></i>
+                </span>
+                <span class="stat-lbl">All Employees</span>
+            </div>
+            <div class="stat-pill">
+                <span class="stat-val">
+                    <i class="fas fa-database" style="font-size:1rem;color:#d97706"></i>
+                </span>
+                <span class="stat-lbl">Full History</span>
+            </div>
+        </div>
+
+        <div class="export-actions">
+            <a href="{{ url_for('admin.export') }}" class="action-btn action-primary"
+               id="downloadBtn" onclick="handleDownload(this)">
+                <div class="btn-icon">
+                    <i class="fas fa-download dl-icon-static"></i>
+                    <div class="dl-spinner"></div>
+                </div>
+                <div class="btn-text">
+                    <div class="btn-title">Download Attendance Excel</div>
+                    <div class="btn-sub">Exports full attendance data as .xlsx file</div>
+                </div>
+                <i class="fas fa-chevron-right btn-arrow"></i>
+            </a>
+
+            <div class="export-divider">or</div>
+
+            <a href="{{ url_for('admin.view_excel') }}" class="action-btn action-success">
+                <div class="btn-icon">
+                    <i class="fas fa-table"></i>
+                </div>
+                <div class="btn-text">
+                    <div class="btn-title">Preview in Browser</div>
+                    <div class="btn-sub">View attendance data as a formatted table</div>
+                </div>
+                <i class="fas fa-chevron-right btn-arrow"></i>
+            </a>
+        </div>
+
+        <div class="format-row">
+            <span class="format-label">Includes:</span>
+            <span class="fmt-badge">Username</span>
+            <span class="fmt-badge">Login / Logout</span>
+            <span class="fmt-badge">Hours Worked</span>
+            <span class="fmt-badge">Status</span>
+        </div>
+
     </div>
+
+    <script>
+        function handleDownload(btn) {
+            btn.classList.add('loading');
+            setTimeout(() => btn.classList.remove('loading'), 3000);
+        }
+    </script>
 </body>
 </html>

@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     sidebar.classList.remove('show');
                 }
                 if (sectionId === 'export') {
-                    window.location.href = '/export_page';
+                    window.location.href = '/admin/export_page';
                 }
             }
         });
@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (adminNewFaceImageInput.files[0]) {
             formData.append('face_image', adminNewFaceImageInput.files[0]);
         }
-        fetch('/update_profile', { method: 'POST', body: formData })
+        fetch('/admin/update_profile', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -164,12 +164,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const formData = new FormData();
         formData.append('username', document.getElementById('edit-username').value);
         formData.append('email', document.getElementById('edit-email').value);
-        formData.append('position', document.getElementById('edit-position').value);
+        const position = document.getElementById('edit-position').value.trim();
+
+        if (!position) {
+            alert("Position is required");
+            return;
+        }
+
+        formData.append('position', position);
         const faceFile = document.getElementById('edit-face-image').files[0];
         if (faceFile) {
             formData.append('face_image', faceFile);
         }
-        fetch(`/admin_update_user/${userId}`, { method: 'POST', body: formData })
+        fetch(`/admin/admin_update_user/${userId}`, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -192,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         const formData = new FormData();
         formData.append('rota_image', document.getElementById('rota-image').files[0]);
-        fetch('/upload_rota', { method: 'POST', body: formData })
+        fetch('/admin/upload_rota', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -214,7 +221,7 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         const formData = new FormData();
         formData.append('message', document.getElementById('notification-message').value);
-        fetch('/send_notification', { method: 'POST', body: formData })
+        fetch('/admin/send_notification', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -237,4 +244,84 @@ document.addEventListener("DOMContentLoaded", function () {
             allAttendanceSection.style.display = allAttendanceSection.style.display === 'none' ? 'block' : 'none';
         });
     }
+
+    
+document.querySelectorAll('.delete-user-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const userId = this.dataset.id;
+
+        if (!confirm("Are you sure you want to delete this user?")) return;
+
+        fetch(`/admin/delete_user/${userId}`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("User deleted successfully");
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error deleting user");
+        });
+    });
 });
+});
+// ================================================================
+// HOLIDAY UPLOAD — REPLACE the existing upload-holiday-form
+// listener at the bottom of admin.js with this block
+// ================================================================
+
+document.getElementById('upload-holiday-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('holiday-image');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please choose a file first.');
+        return;
+    }
+
+    const allowed = ['.xls', '.xlsx', '.csv'];
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    if (!allowed.includes(ext)) {
+        alert('Only .xls, .xlsx, and .csv files are supported.');
+        return;
+    }
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading…';
+
+    const formData = new FormData();
+    formData.append('holiday_image', file);
+
+    fetch('/admin/upload_holiday', {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error('Holiday upload error:', err);
+            alert('Network error. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+});
+

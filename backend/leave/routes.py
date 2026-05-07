@@ -142,6 +142,9 @@ def apply_leave():
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
     except ValueError:
         return jsonify(success=False, message="Invalid date format")
+    # ✅ BLOCK PAST DATES
+    if start_date < date.today() or end_date < date.today():
+        return jsonify(success=False, message="Past dates are not allowed")
 
     if start_date > end_date:
         return jsonify(success=False, message="End date cannot be before start date")
@@ -170,7 +173,7 @@ def apply_leave():
         # Sync carry-forward first
         balance = sync_monthly_carryforward(conn, user_id)
 
-        total_days = get_working_days(start_date, end_date)
+        total_days = (end_date - start_date).days + 1
         paid_balance = balance['paid_leaves']
 
         # Check if user already used paid leave this month (1 per month rule)
@@ -189,12 +192,34 @@ def apply_leave():
 
         # Determine paid vs unpaid split
         # Paid leaves are reserved: max 1 per month, and only if balance allows
-        if leave_type == 'Paid Leave' and paid_balance >= 1:
-            paid_days = min(total_days, 1)  # Max 1 paid leave per month
-        else:
-            paid_days = 0
+        # if leave_type == 'Paid Leave' and paid_balance >= 1:
+        #     paid_days = min(total_days, 1)  # Max 1 paid leave per month
+        # else:
+        #     paid_days = 0
 
-        unpaid_days = total_days - paid_days
+        # unpaid_days = total_days - paid_days
+
+        # NEW LOGIC (Paid → Compensation → Unpaid)
+
+        comp_balance = balance['compensation_leaves']
+        
+        paid_days = 0
+        comp_days = 0
+        
+        # Step 1: Paid leave (max 1 per month)
+        if leave_type == 'Paid Leave' and paid_balance >= 1:
+            paid_days = 1
+        
+        remaining_days = total_days - paid_days
+        
+        # Step 2: Compensation leave
+        if remaining_days > 0 and comp_balance > 0:
+            comp_days = min(remaining_days, comp_balance)
+        
+        remaining_days -= comp_days
+        
+        # Step 3: Unpaid
+        unpaid_days = remaining_days
 
         # Get user info for email
         cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
@@ -202,11 +227,15 @@ def apply_leave():
 
         # Insert leave request with status Pending (no deduction yet — deduct on Approve)
         cursor.execute("""
-            INSERT INTO leaves (user_id, leave_type, start_date, end_date, reason,
-                                total_days, used_paid_days, used_unpaid_days, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Pending')
-        """, (user_id, leave_type, start_date, end_date, reason,
-              total_days, paid_days, unpaid_days))
+    INSERT INTO leaves (
+        user_id, leave_type, start_date, end_date, reason,
+        total_days, used_paid_days, used_unpaid_days, used_comp_days, status
+    )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending')
+""", (
+    user_id, leave_type, start_date, end_date, reason,
+    total_days, paid_days, unpaid_days, comp_days
+))
 
         conn.commit()
 
@@ -222,7 +251,7 @@ Leave Details:
   • Leave Type  : {leave_type}
   • From Date   : {start_date.strftime('%d %B %Y')}
   • To Date     : {end_date.strftime('%d %B %Y')}
-  • Total Days  : {total_days} day(s)  ({paid_days} paid / {unpaid_days} unpaid)
+  • Total Days  : {total_days} day(s)  ({paid_days} paid / {comp_days} comp / {unpaid_days} unpaid)
   • Reason      : {reason}
   • Status      : Pending Review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -264,7 +293,7 @@ def leave_history():
     try:
         cursor.execute("""
             SELECT id, leave_type, start_date, end_date, reason,
-                   total_days, used_paid_days, used_unpaid_days, status,
+                   total_days, used_paid_days, used_unpaid_days,used_comp_days, status,
                    created_at
             FROM leaves
             WHERE user_id = %s
@@ -285,3 +314,4 @@ def leave_history():
     finally:
         cursor.close()
         conn.close()
+

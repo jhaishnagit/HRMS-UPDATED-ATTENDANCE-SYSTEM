@@ -9,11 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('show_modal') === 'true') {
         document.getElementById('adminModal').style.display = 'flex';
+
+        // ✅ Remove ?show_modal=true from URL so refresh doesn't re-trigger it
+        const cleanUrl = window.location.pathname;
+        history.replaceState(null, '', cleanUrl);
     }
 
     // Form validation
     const loginForm = document.getElementById('loginForm');
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', function (e) {
         const email = document.querySelector('input[name="email"]').value;
         const password = document.querySelector('input[name="password"]').value;
 
@@ -36,11 +40,24 @@ function chooseDashboard(role) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'role=' + role
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirect;
-        }
-    })
-    .catch(err => console.error(err));
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            }
+        })
+        .catch(err => console.error(err));
+}
+function togglePassword(id, icon) {
+    const input = document.getElementById(id);
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
 }

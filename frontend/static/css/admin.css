@@ -186,3 +186,119 @@ body {
         margin-left: 250px;
     }
 }
+/* ================================================================
+   HOLIDAY TABLE STYLES
+   Add this block to both:
+     frontend/static/css/dashboard.css
+     frontend/static/css/admin.css
+   ================================================================ */
+
+/* ── Dashboard: Holiday wrapper ── */
+.holiday-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    margin-top: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── The generated pandas table ── */
+.holiday-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    font-family: 'Roboto', sans-serif;
+    background: #fff;
+}
+
+.holiday-data-table thead tr {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: #fff;
+}
+
+.holiday-data-table thead th {
+    padding: 13px 18px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    white-space: nowrap;
+}
+
+.holiday-data-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+}
+
+.holiday-data-table tbody tr:hover {
+    background: #eff6ff;
+}
+
+.holiday-data-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.holiday-data-table tbody tr:nth-child(even):hover {
+    background: #eff6ff;
+}
+
+.holiday-data-table tbody td {
+    padding: 11px 18px;
+    color: #334155;
+    vertical-align: middle;
+    border: none;
+}
+
+/* First column (date/index) bold accent */
+.holiday-data-table tbody td:first-child {
+    font-weight: 600;
+    color: #1e40af;
+}
+
+/* ── Empty state (no holiday uploaded yet) ── */
+.holiday-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+    text-align: center;
+    gap: 8px;
+}
+
+.holiday-empty i {
+    font-size: 3rem;
+    color: #cbd5e1;
+}
+
+.holiday-empty p {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.holiday-empty span {
+    font-size: 0.85rem;
+}
+
+/* ── Admin preview wrapper ── */
+.holiday-preview-wrap {
+    border-radius: 10px;
+    overflow-x: auto;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-top: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+/* Sticky header in admin preview */
+.holiday-preview-wrap .holiday-data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

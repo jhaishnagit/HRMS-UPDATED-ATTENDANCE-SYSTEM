@@ -94,72 +94,115 @@
             </div>
 
             <!-- Attendance Section -->
-            <section class="content-section active" id="attendance">
-                <div class="card">
-                    <h3>Attendance</h3>
-                    <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A'
-                        }}</p>
-                    <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else
-                        'N/A' }}</p>
+            <!-- ══════════════════════════════════════════════════════════════
+     ATTENDANCE SECTION  — replace the existing attendance section
+══════════════════════════════════════════════════════════════ -->
+<section class="content-section active" id="attendance">
+    <div class="card">
+        <h3>Attendance</h3>
+        <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A' }}</p>
+        <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else 'N/A' }}</p>
 
-                    <div class="attendance-form">
+        <div class="attendance-form">
 
-                        <!-- ✅ STEP 1: LOGIN CAMERA -->
-                        {% if can_login %}
-                        <video id="video" autoplay muted playsinline style="max-width:400px;"></video>
-                        <button id="start-camera-btn" class="btn btn-primary">Start Camera</button>
-                        <button id="stop-camera-btn" class="btn btn-danger" style="display:none;">Stop</button>
-                        <button id="capture-login-btn" class="btn btn-success" style="display:none;">Capture
-                            Login</button>
+            <!-- ══ STEP 1: LOGIN CAMERA ══════════════════════════════════ -->
+            {% if can_login %}
 
-                        <!-- ✅ STEP 2: DAILY STATUS -->
-                        {% elif last_login and not daily_status_submitted %}
-                        <textarea id="daily-status" class="form-control mb-2"
-                            placeholder="Enter your daily status report"></textarea>
-                        <button id="submit-status-btn" class="btn btn-primary">Submit Daily Status</button>
+            <!-- Live status updated by JS -->
+            <p id="liveness-status-login" class="alert alert-info mt-2" style="display:none;"></p>
 
-                        <!-- ✅ STEP 3: LOGOUT CAMERA -->
-                        {% elif last_login and daily_status_submitted and not logout_done %}
-                        <p class="alert alert-info">Please capture your logout photo</p>
-                        <video id="video-logout" autoplay muted playsinline style="max-width:400px;"></video>
-                        <button id="start-camera-logout-btn" class="btn btn-primary">Start Camera</button>
-                        <button id="stop-camera-logout-btn" class="btn btn-danger" style="display:none;">Stop</button>
-                        <button id="capture-logout-btn" class="btn btn-success" style="display:none;">Capture
-                            Logout</button>
+            <!-- VIDEO: always visible as a box, camera fills it when started -->
+            <video id="video" autoplay muted playsinline
+                style="width:100%; max-width:420px; height:300px; object-fit:cover;
+                       border-radius:10px; background:#1a1a2e; display:block;
+                       margin-bottom:12px; border:2px solid #dee2e6;">
+            </video>
 
-                        <!-- ✅ STEP 4: DONE -->
-                        {% else %}
-                        <div class="alert alert-success">
-                            You have completed today attendance
-                        </div>
-                        {% endif %}
+            <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                <button id="start-camera-btn" class="btn btn-primary" type="button">
+                    &#128247; Start Camera
+                </button>
+                <button id="stop-camera-btn" class="btn btn-danger" type="button" style="display:none;">
+                    &#9632; Stop
+                </button>
+                <!-- Revealed by JS after 2 blinks -->
+                <button id="capture-login-btn" class="btn btn-success" type="button" style="display:none;">
+                    &#10003; Confirm Login
+                </button>
+            </div>
 
-                    </div>
+            <small class="text-muted d-block mt-1">
+                &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real person.
+            </small>
 
-                    <h3 class="mt-4">Attendance Calendar</h3>
-                    <div class="calendar">
-                        <div class="calendar-header d-flex justify-content-between align-items-center mb-3">
-                            <button id="prev-month" class="btn btn-outline-primary">&lt;</button>
-                            <h4 id="month-year" class="m-0"></h4>
-                            <button id="next-month" class="btn btn-outline-primary">&gt;</button>
-                        </div>
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Mon</th>
-                                    <th scope="col">Tue</th>
-                                    <th scope="col">Wed</th>
-                                    <th scope="col">Thu</th>
-                                    <th scope="col">Fri</th>
-                                    <th scope="col">Sat</th>
-                                    <th scope="col">Sun</th>
-                                </tr>
-                            </thead>
-                            <tbody id="calendar-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            <!-- ══ STEP 2: DAILY STATUS ══════════════════════════════════ -->
+            {% elif last_login and not daily_status_submitted %}
+
+            <textarea id="daily-status" class="form-control mb-2" rows="4"
+                placeholder="Enter your daily status report…"></textarea>
+            <button id="submit-status-btn" class="btn btn-primary" type="button">
+                &#9992; Submit Daily Status
+            </button>
+
+            <!-- ══ STEP 3: LOGOUT CAMERA ═════════════════════════════════ -->
+            {% elif last_login and daily_status_submitted and not logout_done %}
+
+            <div class="alert alert-info">
+                &#9654; Please capture your logout photo
+            </div>
+
+            <p id="liveness-status-logout" class="alert alert-info mt-2" style="display:none;"></p>
+
+            <video id="video-logout" autoplay muted playsinline
+                style="width:100%; max-width:420px; height:300px; object-fit:cover;
+                       border-radius:10px; background:#1a1a2e; display:block;
+                       margin-bottom:12px; border:2px solid #dee2e6;">
+            </video>
+
+            <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                <button id="start-camera-logout-btn" class="btn btn-primary" type="button">
+                    &#128247; Start Camera
+                </button>
+                <button id="stop-camera-logout-btn" class="btn btn-danger" type="button" style="display:none;">
+                    &#9632; Stop
+                </button>
+                <button id="capture-logout-btn" class="btn btn-success" type="button" style="display:none;">
+                    &#10003; Confirm Logout
+                </button>
+            </div>
+
+            <small class="text-muted d-block mt-1">
+                &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real person.
+            </small>
+
+            <!-- ══ STEP 4: DONE ═══════════════════════════════════════════ -->
+            {% else %}
+            <div class="alert alert-success">
+                &#10003; You have completed today's attendance.
+            </div>
+            {% endif %}
+
+        </div>
+
+        <h3 class="mt-4">Attendance Calendar</h3>
+        <div class="calendar">
+            <div class="calendar-header d-flex justify-content-between align-items-center mb-3">
+                <button id="prev-month" class="btn btn-outline-primary">&lt;</button>
+                <h4 id="month-year" class="m-0"></h4>
+                <button id="next-month" class="btn btn-outline-primary">&gt;</button>
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th>
+                        <th>Fri</th><th>Sat</th><th>Sun</th>
+                    </tr>
+                </thead>
+                <tbody id="calendar-body"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
             <!-- Weekly Rota Section -->
             <section class="content-section" id="weekly-rota">
@@ -175,37 +218,22 @@
             </section>
 
             <!-- Holidays Section -->
+            <!-- Holidays Section — REPLACE the existing holidays section in dashboard.html -->
             <section class="content-section" id="holidays">
                 <div class="card">
-                    <h3>Holidays List 2026</h3>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover holiday-table">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Month</th>
-                                    <th>Day</th>
-                                    <th>Holiday</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if holidays %}
-                                {% for h in holidays %}
-                                <tr>
-                                    <td>{{ h.holiday_date.strftime('%d-%m-%Y') }}</td>
-                                    <td>{{ h.holiday_date.strftime('%B') }}</td>
-                                    <td>{{ h.holiday_date.strftime('%A') }}</td>
-                                    <td>{{ h.holiday_name }}</td>
-                                </tr>
-                                {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No holidays available</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                    <h3><i class="fas fa-calendar-alt me-2"></i>Holidays List </h3>
+
+                    {% if holiday_table %}
+                    <div class="holiday-table-wrapper">
+                        {{ holiday_table | safe }}
                     </div>
+                    {% else %}
+                    <div class="holiday-empty">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No holiday list has been uploaded yet.</p>
+                        <span>Check back later or contact HR.</span>
+                    </div>
+                    {% endif %}
                 </div>
             </section>
 
@@ -264,240 +292,246 @@
                     </div>
                 </div>
             </section>
-
-            <!-- =========================================================
-     LEAVES SECTION — drop-in replacement for the <section id="leaves"> in dashboard.html
-     Requires Chart.js (loaded below) and /leave/leave_history endpoint
-     ========================================================= -->
-
-            <!-- Inside <head> add Chart.js: -->
-            <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> -->
-
-            <!-- LEAVE SECTION HTML (replace existing <section class="content-section" id="leaves">...</section>) -->
+            -------------------------------------------------------------------------------------------------------
+            <!-- ============================================================
+     LEAVES SECTION v2 — Full Updated HTML
+     Changes:
+     1. Removed dashed line above hero cards
+     2. Removed "View All + Charts" button from history header
+     3. Export button added inside the Leave History Modal
+     4. Custom date picker styling (no boring browser default)
+     ============================================================ -->
             <section class="content-section" id="leaves">
 
-                <!-- ── Summary Cards ── -->
-                <div class="row mb-4 g-3">
-                    <div class="col-md-4">
-                        <div class="leave-card total" style="cursor:default;">
-                            <i class="fas fa-umbrella-beach"></i>
-                            <h6>Compensation Leaves</h6>
-                            <h2>{{ compensation_leaves }}</h2>
+                <!-- ── Hero Stats (NO line above) ── -->
+                <div class="leave-hero">
+                    <div class="leave-stat-card comp">
+                        <div class="leave-stat-icon"><i class="fas fa-umbrella-beach"></i></div>
+                        <div class="leave-stat-body">
+                            <span class="leave-stat-label">Compensation Leaves</span>
+                            <span class="leave-stat-value">{{ compensation_leaves }}</span>
                         </div>
+                        <div class="leave-stat-ring"></div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="leave-card available" style="cursor:default;">
-                            <i class="fas fa-wallet"></i>
-                            <h6>Available Paid Leaves</h6>
-                            <h2>{{ paid_leave_balance }}</h2>
+
+                    <div class="leave-stat-card avail">
+                        <div class="leave-stat-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="leave-stat-body">
+                            <span class="leave-stat-label">Available Paid Leaves</span>
+                            <span class="leave-stat-value">{{ paid_leave_balance }}</span>
                         </div>
+                        <div class="leave-stat-ring"></div>
                     </div>
-                    <div class="col-md-4">
-                        <!-- Clickable: opens full history modal -->
-                        <div class="leave-card used" style="cursor:pointer; position:relative;"
-                            onclick="openLeaveHistoryModal()" title="Click to view full leave history">
-                            <i class="fas fa-chart-line"></i>
-                            <h6>Total Used Leaves</h6>
-                            <h2>{{ user_leaves
-                                | selectattr('status', 'equalto', 'Approved')
-                                | sum(attribute='total_days')
-                                if user_leaves else 0 }}</h2>
-                            <small style="font-size:.72rem; opacity:.75; margin-top:4px;">
-                                <i class="fas fa-eye"></i> Click to view history
-                            </small>
+
+                    <div class="leave-stat-card used" onclick="openLeaveHistoryModal()" title="View full history">
+                        <div class="leave-stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="leave-stat-body">
+                            <span class="leave-stat-label">Total Used Leaves</span>
+                            <span class="leave-stat-value">
+                                {{ user_leaves | selectattr('status','equalto','Approved') | sum(attribute='total_days')
+                                if user_leaves else 0 }}
+                            </span>
                         </div>
+                        <div class="leave-stat-ring"></div>
+                        <span class="leave-stat-cta"><i class="fas fa-eye"></i> View History</span>
                     </div>
                 </div>
 
-                <!-- ── Leave Application + History ── -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white d-flex align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-umbrella-beach me-2"></i>Leave Management</h5>
-                        <span class="ms-auto badge bg-light text-primary" style="font-size:.78rem;">
-                            April – March Cycle &nbsp;|&nbsp; 1 Paid Leave / Month
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-4">
+                <!-- ── Main Panel ── -->
+                <div class="leave-panel">
 
-                            <!-- Apply Form -->
-                            <div class="col-md-5">
-                                <div class="p-4 border rounded-3 bg-light">
-                                    <h5 class="mb-3">Apply for Leave</h5>
-                                    <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3"
-                                        style="font-size:.88rem;">
-                                        <i class="fas fa-info-circle"></i>
-                                        <span>Available Paid: <strong>{{ paid_leave_balance }}</strong> &nbsp;|&nbsp;
-                                            Compensation: <strong>{{ compensation_leaves }}</strong></span>
-                                    </div>
-                                    <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3"
-                                        style="font-size:.82rem;">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                        <span>Max <strong>1 paid leave per calendar month</strong>. Extra days will be
-                                            unpaid.</span>
-                                    </div>
-                                    <form id="leave-form">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Leave Type</label>
-                                            <select class="form-select" id="leave-type" required>
+                    <div class="leave-panel-header">
+                        <div class="leave-panel-title">
+                            <i class="fas fa-umbrella-beach"></i>
+                            <span>Leave Management</span>
+                        </div>
+                        <span class="leave-cycle-badge">April – March Cycle &nbsp;·&nbsp; 1 Paid Leave / Month</span>
+                    </div>
+
+                    <div class="leave-panel-body">
+
+                        <!-- ── Apply Form ── -->
+                        <div class="leave-apply-col">
+                            <div class="leave-form-box">
+                                <h5 class="leave-form-title"><i class="fas fa-paper-plane"></i> Apply for Leave</h5>
+
+                                <div class="leave-info-bar">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Paid: <strong>{{ paid_leave_balance }}</strong> &nbsp;|&nbsp; Comp: <strong>{{
+                                            compensation_leaves }}</strong></span>
+                                </div>
+                                <div class="leave-warn-bar">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Max <strong>1 paid leave / month</strong>. Extra days are unpaid.</span>
+                                </div>
+
+                                <form id="leave-form">
+                                    <div class="lf-group">
+                                        <label class="lf-label">Leave Type</label>
+                                        <div class="lf-select-wrap">
+                                            <select class="lf-select" id="leave-type" required>
                                                 <option value="">Select Type</option>
                                                 <option value="Paid Leave">Paid Leave</option>
                                                 <option value="Sick Leave">Sick Leave</option>
                                                 <option value="Emergency Leave">Emergency Leave</option>
                                             </select>
+                                            <i class="fas fa-chevron-down lf-select-icon"></i>
                                         </div>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">From Date</label>
-                                            <input type="date" class="form-control" id="leave-start" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">To Date</label>
-                                            <input type="date" class="form-control" id="leave-end" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Reason</label>
-                                            <textarea class="form-control" id="leave-reason" rows="3"
-                                                placeholder="Enter reason for leave..." required></textarea>
-                                        </div>
-                                       <button type="button" id="submit-leave-btn" class="btn btn-primary w-100">
-                                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                                            <i class="fas fa-paper-plane me-1"></i> Submit Leave Request
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
+                                    </div>
 
-                            <!-- Recent Leave History (last 5) -->
-                            <div class="col-md-7">
-                                <div class="d-flex align-items-center mb-3">
-                                    <h5 class="mb-0">Recent Leave History</h5>
-                                    <button class="btn btn-sm btn-outline-primary ms-auto"
-                                        onclick="openLeaveHistoryModal()">
-                                        <i class="fas fa-expand-alt me-1"></i> View All + Charts
+                                    <div class="lf-row">
+                                        <div class="lf-group">
+                                            <label class="lf-label">From Date</label>
+                                            <div class="lf-date-wrap" id="fromDateWrap">
+                                                <i class="fas fa-calendar-day lf-date-icon"></i>
+                                                <input type="date" class="lf-date-input" id="leave-start" required>
+                                            </div>
+                                        </div>
+                                        <div class="lf-group">
+                                            <label class="lf-label">To Date</label>
+                                            <div class="lf-date-wrap" id="toDateWrap">
+                                                <i class="fas fa-calendar-check lf-date-icon"></i>
+                                                <input type="date" class="lf-date-input" id="leave-end" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="lf-group">
+                                        <label class="lf-label">Reason</label>
+                                        <textarea class="lf-textarea" id="leave-reason" rows="3"
+                                            placeholder="Briefly describe your reason…" required></textarea>
+                                    </div>
+
+                                    <button type="button" id="submit-leave-btn" class="lf-submit-btn">
+                                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                        <i class="fas fa-paper-plane"></i> Submit Leave Request
                                     </button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle" style="font-size:.88rem;">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>Type</th>
-                                                <th>From</th>
-                                                <th>To</th>
-                                                <th>Days</th>
-                                                <th>Paid</th>
-                                                <th>Unpaid</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% if user_leaves %}
-                                            {% for leave in user_leaves[:5] %}
-                                            <tr>
-                                                <td><strong>{{ leave.leave_type }}</strong></td>
-                                                <td>{{ leave.start_date }}</td>
-                                                <td>{{ leave.end_date }}</td>
-                                                <td>{{ leave.total_days }}</td>
-                                                <td><span class="badge bg-success">{{ leave.used_paid_days }}</span>
-                                                </td>
-                                                <td><span class="badge bg-danger">{{ leave.used_unpaid_days }}</span>
-                                                </td>
-                                                <td>
-                                                    {% if leave.status == 'Approved' %}
-                                                    <span class="badge bg-success">Approved</span>
-                                                    {% elif leave.status == 'Rejected' %}
-                                                    <span class="badge bg-danger">Rejected</span>
-                                                    {% else %}
-                                                    <span class="badge bg-warning text-dark">Pending</span>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                            {% if user_leaves | length > 5 %}
-                                            <tr>
-                                                <td colspan="7" class="text-center">
-                                                    <button class="btn btn-link btn-sm p-0"
-                                                        onclick="openLeaveHistoryModal()">
-                                                        + {{ user_leaves | length - 5 }} more records — view all
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endif %}
-                                            {% else %}
-                                            <tr>
-                                                <td colspan="7" class="text-center text-muted py-4">
-                                                    <i class="fas fa-inbox mb-2 d-block" style="font-size:1.5rem;"></i>
-                                                    No leave history yet
-                                                </td>
-                                            </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- ── Recent History (NO "View All + Charts" button) ── -->
+                        <div class="leave-history-col">
+                            <div class="leave-history-header">
+                                <h5 class="leave-history-title">Recent Leave History</h5>
+                                <!-- View All button removed as requested -->
                             </div>
 
+                            <div class="leave-list">
+                                {% if user_leaves %}
+                                {% for leave in user_leaves[:5] %}
+                                <div class="leave-item">
+                                    <div class="leave-item-type">
+                                        <span class="leave-type-dot
+                                    {% if leave.leave_type == 'Paid Leave' %}dot-paid
+                                    {% elif leave.leave_type == 'Sick Leave' %}dot-sick
+                                    {% else %}dot-emergency{% endif %}">
+                                        </span>
+                                        <strong>{{ leave.leave_type }}</strong>
+                                    </div>
+                                    <div class="leave-item-dates">
+                                        <span><i class="fas fa-calendar-day"></i> {{ leave.start_date }}</span>
+                                        <span class="date-arrow">→</span>
+                                        <span>{{ leave.end_date }}</span>
+                                    </div>
+                                    <div class="leave-item-meta">
+                                        <span class="meta-chip chip-days"><i class="fas fa-sun"></i> {{ leave.total_days
+                                            }}d</span>
+                                        <span class="meta-chip chip-paid">P:{{ leave.used_paid_days }}</span>
+                                        <span class="meta-chip chip-comp">C:{{ leave.used_comp_days }}</span>
+                                        <span class="meta-chip chip-unpaid">U:{{ leave.used_unpaid_days }}</span>
+                                        <span class="leave-status-badge
+                                    {% if leave.status == 'Approved' %}badge-approved
+                                    {% elif leave.status == 'Rejected' %}badge-rejected
+                                    {% else %}badge-pending{% endif %}">
+                                            {% if leave.status == 'Approved' %}<i class="fas fa-check-circle"></i>
+                                            {% elif leave.status == 'Rejected' %}<i class="fas fa-times-circle"></i>
+                                            {% else %}<i class="fas fa-clock"></i>{% endif %}
+                                            {{ leave.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                                {% if user_leaves | length > 5 %}
+                                <button class="leave-more-btn" onclick="openLeaveHistoryModal()">
+                                    <i class="fas fa-chevron-down"></i>
+                                    {{ user_leaves | length - 5 }} more records — click Total Used Leaves to view all
+                                </button>
+                                {% endif %}
+
+                                {% else %}
+                                <div class="leave-empty">
+                                    <div class="leave-empty-icon"><i class="fas fa-umbrella-beach"></i></div>
+                                    <p>No leave history yet</p>
+                                    <span>Your submitted leaves will appear here</span>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </section>
 
 
-            <!-- ================================================================
-     LEAVE HISTORY MODAL (Full history + Charts)
-     Place anywhere inside <body>, before </body>
-     ================================================================ -->
+            <!-- ============================================================
+     LEAVE HISTORY MODAL — with Export Button
+     ============================================================ -->
             <div class="modal fade" id="leaveHistoryModal" tabindex="-1">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content" style="border-radius:16px; overflow:hidden;">
-                        <div class="modal-header"
-                            style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; border:none;">
-                            <h5 class="modal-title">
-                                <i class="fas fa-chart-bar me-2"></i> Full Leave History & Analytics
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <div class="modal-content lhm-content">
+                        <div class="modal-header lhm-header">
+                            <div class="lhm-title">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Leave History & Analytics</span>
+                            </div>
+                            <div class="lhm-header-actions">
+                                <!-- EXPORT BUTTON -->
+                                <button class="lhm-export-btn" id="exportLeaveBtn" onclick="exportLeaveHistory()"
+                                    title="Download as Excel/CSV">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                                <button type="button" class="lhm-close" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="modal-body p-4">
+                        <div class="modal-body lhm-body">
 
-                            <!-- Loading state -->
-                            <div id="historyLoading" class="text-center py-5">
-                                <div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div>
-                                <p class="mt-3 text-muted">Loading your leave history…</p>
+                            <div id="historyLoading" class="lhm-loading">
+                                <div class="lhm-spinner"></div>
+                                <p>Loading your leave history…</p>
                             </div>
 
-                            <!-- Content (shown after load) -->
                             <div id="historyContent" style="display:none;">
 
-                                <!-- Chart Row -->
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <div class="p-3 border rounded-3 bg-light h-100">
-                                            <h6 class="fw-bold mb-3 text-center">Leave Status Breakdown</h6>
-                                            <canvas id="statusPieChart" style="max-height:220px;"></canvas>
-                                        </div>
+                                <div class="lhm-pills" id="summaryPills"></div>
+
+                                <div class="lhm-charts">
+                                    <div class="lhm-chart-card">
+                                        <h6><i class="fas fa-chart-pie"></i> Status Breakdown</h6>
+                                        <canvas id="statusPieChart" style="max-height:220px;"></canvas>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="p-3 border rounded-3 bg-light h-100">
-                                            <h6 class="fw-bold mb-3 text-center">Days Used by Month (This Year)</h6>
-                                            <canvas id="monthlyBarChart" style="max-height:220px;"></canvas>
-                                        </div>
+                                    <div class="lhm-chart-card">
+                                        <h6><i class="fas fa-chart-bar"></i> Days Used by Month</h6>
+                                        <canvas id="monthlyBarChart" style="max-height:220px;"></canvas>
                                     </div>
                                 </div>
 
-                                <!-- Summary pills -->
-                                <div class="d-flex gap-3 flex-wrap mb-4" id="summaryPills"></div>
-
-                                <!-- Full Table -->
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle" style="font-size:.88rem;">
+                                <div class="lhm-table-wrap">
+                                    <table class="lhm-table" id="leaveHistoryTable">
                                         <thead>
-                                            <tr style="background:#f1f5f9;">
+                                            <tr>
                                                 <th>#</th>
-                                                <th>Leave Type</th>
+                                                <th>Type</th>
                                                 <th>From</th>
                                                 <th>To</th>
-                                                <th>Total Days</th>
-                                                <th>Paid Days</th>
-                                                <th>Unpaid Days</th>
+                                                <th>Days</th>
+                                                <th>Paid</th>
+                                                <th>Comp</th>
+                                                <th>Unpaid</th>
                                                 <th>Reason</th>
                                                 <th>Applied On</th>
                                                 <th>Status</th>
@@ -508,16 +542,15 @@
                                 </div>
                             </div>
 
-                            <!-- Error state -->
-                            <div id="historyError" style="display:none;" class="text-center py-5 text-danger">
-                                <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                            <div id="historyError" style="display:none;" class="lhm-error">
+                                <i class="fas fa-exclamation-circle"></i>
                                 <p>Failed to load leave history. Please try again.</p>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
+            ---------------------------------------------------------------------------------------------------------
             <!-- Notifications Section -->
             <section class="content-section" id="notifications">
                 <div class="card">
@@ -642,231 +675,33 @@
 
         // Leave form submission
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            fetch('/check_admin')
-                .then(res => res.json())
-                .then(data => {
-
-                    if (data.is_admin == 1) {
-                        document.getElementById("adminPopup").style.display = "flex";
-                    } else {
-                        document.getElementById("mainContent").style.display = "block";
-                    }
-
-                });
-
-        });
-
-        function goAdmin() {
-            window.location.href = "/admin/admin";
-        }
-
-        function closePopup() {
-            document.getElementById("adminPopup").style.display = "none";
+        <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        {% if show_modal %}
+            document.getElementById("adminPopup").style.display = "flex";
+        {% else %}
             document.getElementById("mainContent").style.display = "block";
-        }
-    </script>
+        {% endif %}
+    });
+
+    function goAdmin() {
+        window.location.href = "/admin/admin";
+    }
+
+    function closePopup() {
+        document.getElementById("adminPopup").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
+    }
+</script>
 
     <!-- ================================================================
      JAVASCRIPT for Leave Form + History Modal
      Place before </body>
      ================================================================ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script>
-        /* ──────────────── Leave Apply Form ──────────────── */
-        document.getElementById('leave-form')?.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submit-leave-btn');
-            const spinner = submitBtn.querySelector('.spinner-border');
-
-            if (new Date(document.getElementById('leave-start').value) >
-                new Date(document.getElementById('leave-end').value)) {
-                alert('End date cannot be before start date');
-                return;
-            }
-
-            spinner.classList.remove('d-none');
-            submitBtn.disabled = true;
-
-            try {
-                const fd = new FormData();
-                fd.append('leave_type', document.getElementById('leave-type').value);
-                fd.append('start_date', document.getElementById('leave-start').value);
-                fd.append('end_date', document.getElementById('leave-end').value);
-                fd.append('reason', document.getElementById('leave-reason').value);
-
-                const res = await fetch('/leave/apply_leave', { method: 'POST', body: fd });
-                const data = await res.json();
-
-                if (data.success) {
-                    alert('✅ ' + data.message + '\n\nA confirmation email has been sent to you.');
-                    this.reset();
-                    window.location.reload();
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            } catch (err) {
-                alert('Network error. Please try again.');
-            } finally {
-                spinner.classList.add('d-none');
-                submitBtn.disabled = false;
-            }
-        });
-
-        /* ──────────────── Leave History Modal ──────────────── */
-        let pieChartInst = null;
-        let barChartInst = null;
-        let historyLoaded = false;
-
-        function openLeaveHistoryModal() {
-            const modal = new bootstrap.Modal(document.getElementById('leaveHistoryModal'));
-            modal.show();
-
-            if (historyLoaded) return;  // Don't reload if already loaded
-
-            document.getElementById('historyLoading').style.display = 'block';
-            document.getElementById('historyContent').style.display = 'none';
-            document.getElementById('historyError').style.display = 'none';
-
-            fetch('/leave/leave_history')
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.success) throw new Error(data.message);
-                    renderHistoryModal(data.leaves);
-                    historyLoaded = true;
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('historyLoading').style.display = 'none';
-                    document.getElementById('historyError').style.display = 'block';
-                });
-        }
-
-        function renderHistoryModal(leaves) {
-            document.getElementById('historyLoading').style.display = 'none';
-            document.getElementById('historyContent').style.display = 'block';
-
-            /* ── Summary pills ── */
-            const approved = leaves.filter(l => l.status === 'Approved');
-            const pending = leaves.filter(l => l.status === 'Pending');
-            const rejected = leaves.filter(l => l.status === 'Rejected');
-            const totalUsed = approved.reduce((s, l) => s + (l.total_days || 0), 0);
-
-            const pillsHtml = [
-                { label: 'Total Requests', val: leaves.length, color: '#3b82f6' },
-                { label: 'Approved', val: approved.length, color: '#10b981' },
-                { label: 'Pending', val: pending.length, color: '#f59e0b' },
-                { label: 'Rejected', val: rejected.length, color: '#ef4444' },
-                { label: 'Days Used', val: totalUsed + ' days', color: '#6366f1' },
-            ].map(p => `
-        <div style="background:${p.color}15; border:1.5px solid ${p.color}40; border-radius:20px;
-                    padding:6px 18px; font-size:.85rem;">
-            <span style="color:${p.color}; font-weight:700;">${p.val}</span>
-            <span style="color:#555; margin-left:6px;">${p.label}</span>
-        </div>
-    `).join('');
-            document.getElementById('summaryPills').innerHTML = pillsHtml;
-
-            /* ── Full table ── */
-            const tbody = document.getElementById('fullHistoryBody');
-            if (!leaves.length) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted py-5">
-            <i class="fas fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
-            No leave history found.</td></tr>`;
-            } else {
-                tbody.innerHTML = leaves.map((l, i) => {
-                    const statusColor = l.status === 'Approved' ? 'success'
-                        : l.status === 'Rejected' ? 'danger'
-                            : 'warning text-dark';
-                    return `
-            <tr>
-                <td class="text-muted">${i + 1}</td>
-                <td><strong>${l.leave_type}</strong></td>
-                <td>${l.start_date}</td>
-                <td>${l.end_date}</td>
-                <td><strong>${l.total_days}</strong></td>
-                <td><span class="badge bg-success">${l.used_paid_days || 0}</span></td>
-                <td><span class="badge bg-danger">${l.used_unpaid_days || 0}</span></td>
-                <td style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-                    title="${l.reason}">${l.reason}</td>
-                <td class="text-muted" style="font-size:.82rem;">${l.created_at}</td>
-                <td><span class="badge bg-${statusColor}">${l.status}</span></td>
-            </tr>`;
-                }).join('');
-            }
-
-            /* ── Pie Chart: Status breakdown ── */
-            if (pieChartInst) pieChartInst.destroy();
-            pieChartInst = new Chart(document.getElementById('statusPieChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Approved', 'Pending', 'Rejected'],
-                    datasets: [{
-                        data: [approved.length, pending.length, rejected.length],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { padding: 12, font: { size: 12 } } }
-                    },
-                    cutout: '60%'
-                }
-            });
-
-            /* ── Bar Chart: Days used by month (current year) ── */
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const paidByMonth = new Array(12).fill(0);
-            const unpaidByMonth = new Array(12).fill(0);
-
-            const currentYear = new Date().getFullYear();
-            leaves.filter(l => l.status === 'Approved').forEach(l => {
-                const d = new Date(l.start_date);
-                if (d.getFullYear() === currentYear) {
-                    const m = d.getMonth();
-                    paidByMonth[m] += (l.used_paid_days || 0);
-                    unpaidByMonth[m] += (l.used_unpaid_days || 0);
-                }
-            });
-
-            if (barChartInst) barChartInst.destroy();
-            barChartInst = new Chart(document.getElementById('monthlyBarChart'), {
-                type: 'bar',
-                data: {
-                    labels: months,
-                    datasets: [
-                        {
-                            label: 'Paid Days',
-                            data: paidByMonth,
-                            backgroundColor: '#10b981cc',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'Unpaid Days',
-                            data: unpaidByMonth,
-                            backgroundColor: '#ef4444cc',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { padding: 12, font: { size: 12 } } }
-                    },
-                    scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
-                }
-            });
-        }
-    </script>
+    <!-- MediaPipe FaceMesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <!-- Custom JS file -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
