@@ -127,17 +127,42 @@ document.addEventListener("DOMContentLoaded", function () {
             const status = e.target.value;
             const formData = new FormData();
             formData.append('status', status);
-            fetch(`/update_attendance_status/${attendanceId}`, { method: 'POST', body: formData })
+            fetch(`/admin/update_attendance_status/${attendanceId}`, { method: 'POST', body: formData })
                 .then(response => response.json())
                 .then(data => {
+
                     if (data.success) {
+
                         alert('Status updated!');
+
+                        const row = e.target.closest('tr');
+
+                        const badge = row.querySelector('.badge');
+
+                        badge.textContent = status;
+
+                        badge.classList.remove('bg-success', 'bg-danger');
+
+                        if (status === 'Present') {
+
+                            badge.classList.add('bg-success');
+
+                        } else {
+
+                            badge.classList.add('bg-danger');
+
+                        }
+
                     } else {
+
                         alert(data.message);
-                        e.target.value = e.target.dataset.previousValue || 'Absent'; // Revert
+
+                        e.target.value =
+                            e.target.dataset.previousValue || 'Absent';
+
                     }
-                })
-                .catch(error => {
+
+                }).catch(error => {
                     console.error('Error updating status:', error);
                     alert('Error updating status');
                 });
@@ -245,31 +270,31 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    
-document.querySelectorAll('.delete-user-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const userId = this.dataset.id;
 
-        if (!confirm("Are you sure you want to delete this user?")) return;
+    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const userId = this.dataset.id;
 
-        fetch(`/admin/delete_user/${userId}`, {
-            method: 'POST'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("User deleted successfully");
-                location.reload();
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Error deleting user");
+            if (!confirm("Are you sure you want to delete this user?")) return;
+
+            fetch(`/admin/delete_user/${userId}`, {
+                method: 'POST'
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("User deleted successfully");
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error deleting user");
+                });
         });
     });
-});
 });
 // ================================================================
 // HOLIDAY UPLOAD — REPLACE the existing upload-holiday-form
@@ -325,3 +350,67 @@ document.getElementById('upload-holiday-form').addEventListener('submit', functi
         });
 });
 
+
+/* ADMIN PROFILE IMAGE POPUP */
+document.addEventListener("DOMContentLoaded", function () {
+
+    const adminProfilePic = document.getElementById("admin-profile-pic");
+    const adminProfileModal = document.getElementById("adminProfileModal");
+    const adminProfileModalImg = document.getElementById("adminProfileModalImg");
+    const adminProfileClose = document.querySelector(".profile-close");
+
+    if (adminProfilePic && adminProfileModal && adminProfileModalImg) {
+
+        adminProfilePic.addEventListener("click", function () {
+            adminProfileModal.style.display = "block";
+            adminProfileModalImg.src = this.src;
+        });
+
+    }
+
+    if (adminProfileClose && adminProfileModal) {
+
+        adminProfileClose.addEventListener("click", function () {
+            adminProfileModal.style.display = "none";
+        });
+
+        window.addEventListener("click", function (e) {
+            if (e.target === adminProfileModal) {
+                adminProfileModal.style.display = "none";
+            }
+        });
+
+    }
+
+});
+
+/* USER PROFILE IMAGE POPUP */
+document.addEventListener("DOMContentLoaded", function () {
+
+    const userImages = document.querySelectorAll(".user-profile-img");
+    const userProfileModal = document.getElementById("userProfileModal");
+    const userProfileModalImg = document.getElementById("userProfileModalImg");
+    const userProfileClose = userProfileModal.querySelector(".profile-close");
+
+    userImages.forEach(function (img) {
+
+        img.style.cursor = "pointer";
+
+        img.addEventListener("click", function () {
+            userProfileModal.style.display = "block";
+            userProfileModalImg.src = this.src;
+        });
+
+    });
+
+    userProfileClose.addEventListener("click", function () {
+        userProfileModal.style.display = "none";
+    });
+
+    window.addEventListener("click", function (e) {
+        if (e.target === userProfileModal) {
+            userProfileModal.style.display = "none";
+        }
+    });
+
+});

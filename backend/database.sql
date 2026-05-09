@@ -1,6 +1,3 @@
-create database IF NOT Exists gps_face_db;
-use gps_face_db;
-
 CREATE TABLE IF NOT Exists users (
     id INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE,
@@ -79,15 +76,19 @@ CREATE TABLE IF NOT EXISTS leaves (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Add new table for leave balance
 CREATE TABLE IF NOT EXISTS leave_balance (
-    user_id INT PRIMARY KEY,
-    paid_leaves INT DEFAULT 0,
-    last_updated_month INT DEFAULT 0,
-    last_updated_year INT DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    total_annual_leaves INT DEFAULT 12,
+    paid_leaves INT DEFAULT 12,
+    compensation_leaves INT DEFAULT 0,
+    last_updated DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Update leaves table (if needed)
-ALTER TABLE leaves 
-MODIFY leave_type ENUM('Paid Leave', 'Sick Leave', 'Emergency Leave');
+CREATE TABLE IF NOT EXISTS holidays (
+    id INT NOT NULL AUTO_INCREMENT,
+    holiday_date DATE UNIQUE,
+    holiday_name VARCHAR(100),
+    PRIMARY KEY (id)
+);

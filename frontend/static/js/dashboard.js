@@ -425,6 +425,34 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     setInterval(checkNotifications, 30000);
     checkNotifications();
+    /* PROFILE IMAGE POPUP */
+const profilePic = document.getElementById("profile-pic");
+const profileModal = document.getElementById("profileModal");
+const profileModalImg = document.getElementById("profileModalImg");
+const profileClose = document.querySelector(".profile-close");
+
+if (profilePic && profileModal && profileModalImg) {
+
+    profilePic.addEventListener("click", function () {
+        profileModal.style.display = "block";
+        profileModalImg.src = this.src;
+    });
+
+}
+
+if (profileClose && profileModal) {
+
+    profileClose.addEventListener("click", function () {
+        profileModal.style.display = "none";
+    });
+
+    window.addEventListener("click", function (e) {
+        if (e.target === profileModal) {
+            profileModal.style.display = "none";
+        }
+    });
+
+}
 });
 
 
@@ -530,8 +558,15 @@ function renderHistoryModal(leaves) {
                         <td style="color:#9ca3af;">${i + 1}</td>
                         <td><strong>${l.leave_type}</strong></td>
                         <td>${l.start_date}</td><td>${l.end_date}</td>
-                        <td><strong>${l.total_days}</strong></td>
-                        <td><span style="background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:6px;font-size:.8rem;font-weight:600;">
+           <td><strong>${l.total_days}</strong></td>
+
+<td>
+    <span style="background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:6px;font-size:.8rem;font-weight:600;">
+        ${l.holiday_days || 0}
+    </span>
+</td>
+
+<td><span style="background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:6px;font-size:.8rem;font-weight:600;">
     ${l.used_paid_days || 0}
 </span></td>
 
@@ -558,7 +593,7 @@ function renderHistoryModal(leaves) {
     });
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const paidM = new Array(12).fill(0),compM = new Array(12).fill(0), unpaidM = new Array(12).fill(0);
+    const paidM = new Array(12).fill(0), compM = new Array(12).fill(0), unpaidM = new Array(12).fill(0);
     const yr = new Date().getFullYear();
     leaves.filter(l => l.status === 'Approved').forEach(l => {
         const d = new Date(l.start_date);
@@ -589,3 +624,122 @@ function exportLeaveHistory() {
     } catch { showToast('Export failed.', 'error'); }
     finally { btn.innerHTML = '<i class="fas fa-download"></i> Export'; btn.disabled = false; }
 }
+
+
+
+// Calendar functionality
+const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+
+function renderCalendar(year, month) {
+    document.getElementById('month-year').textContent = new Date(year, month, 1).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long'
+    });
+    const tbody = document.getElementById('calendar-body');
+    tbody.innerHTML = '';
+
+    const firstDate = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startWeekday = firstDate.getDay();
+    const emptyCells = (startWeekday + 6) % 7;
+
+    let cellIndex = 0;
+    for (let row = 0; row < 6; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < 7; col++) {
+            const td = document.createElement('td');
+            const dayNum = cellIndex - emptyCells + 1;
+
+            if (cellIndex < emptyCells || dayNum > daysInMonth) {
+                td.className = 'empty';
+                td.textContent = '';
+            } else {
+                const date = new Date(year, month, dayNum);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                td.title = dateStr;
+
+                if (dateStr > todayStr) {
+                    td.className = 'future';
+                    td.textContent = dayNum;
+                } else {
+                    if (attendanceData.hasOwnProperty(dateStr)) {
+                        const isPresent = attendanceData[dateStr];
+                        td.className = isPresent ? 'present' : 'absent';
+                    } else {
+                        td.className = 'empty';
+                    }
+                    td.textContent = dayNum;
+                }
+            }
+            tr.appendChild(td);
+            cellIndex++;
+        }
+        tbody.appendChild(tr);
+        if (cellIndex >= emptyCells + daysInMonth) break;
+    }
+}
+
+document.getElementById('prev-month').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+    renderCalendar(currentYear, currentMonth);
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    renderCalendar(currentYear, currentMonth);
+});
+
+// Initial calendar render
+renderCalendar(currentYear, currentMonth);
+
+// Section navigation
+document.querySelectorAll('.sidebar-nav li[data-section]').forEach(item => {
+    item.addEventListener('click', function (e) {
+        e.preventDefault();
+        const sectionId = this.getAttribute('data-section');
+
+        // Update active sidebar item
+        document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+        this.classList.add('active');
+
+        // Show corresponding section
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(sectionId).classList.add('active');
+    });
+});
+
+// Leave form submission
+
+
+function goAdmin() {
+    window.location.href = "/admin/admin";
+}
+
+function closePopup() {
+    document.getElementById("adminPopup").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    if (showModal) {
+        document.getElementById("adminPopup").style.display = "flex";
+    } else {
+        document.getElementById("mainContent").style.display = "block";
+    }
+
+});
+

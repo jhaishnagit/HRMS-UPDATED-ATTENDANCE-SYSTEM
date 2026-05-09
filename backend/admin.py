@@ -186,7 +186,7 @@ def admin_leaves():
     try:
         cursor.execute("""
             SELECT l.id, l.leave_type, l.start_date, l.end_date, l.reason,
-                   l.status, l.created_at, l.total_days, l.used_paid_days, l.used_unpaid_days,l.used_comp_days,
+                   l.status, l.created_at, l.total_days, l.holiday_days, l.used_paid_days, l.used_unpaid_days,l.used_comp_days,
                    u.username, u.email
             FROM leaves l
             JOIN users u ON l.user_id = u.id

@@ -105,10 +105,15 @@ def dashboard():
         holiday_table = ""   # safe fallback
     
     def fix_date(match):
-        y, m, d = match.group().split("-")
+        date_part = match.group().split(" ")[0]
+        y, m, d = date_part.split("-")
         return f"{d}-{m}-{y}"
     
-    holiday_table = re.sub(r"\d{4}-\d{2}-\d{2}", fix_date, holiday_table)
+    holiday_table = re.sub(
+        r"\d{4}-\d{2}-\d{2}(?:\s\d{2}:\d{2}:\d{2})?",
+        fix_date,
+        holiday_table
+) 
 
     # NOTIFICATIONS
     cursor.execute("""

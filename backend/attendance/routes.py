@@ -138,8 +138,7 @@ def verify_face(stored_blob, captured_np: np.ndarray, tolerance=0.48):
     print(f"[face_verify] distance={distance:.4f}  tolerance={tolerance}")
 
     if distance <= tolerance:
-        confidence = round((1 - distance) * 100, 1)
-        return True, f"Face matched ({confidence}% confidence)"
+        return True, "Face matched"
 
     if distance <= tolerance + 0.10:
         print(f"[face_verify] NEAR MISS distance={distance:.4f}")

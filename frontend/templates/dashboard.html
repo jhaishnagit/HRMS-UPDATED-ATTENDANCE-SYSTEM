@@ -72,7 +72,7 @@
             </div>
         </nav>
 
-        <main class="main-content" id="mainContent" style="display:none;">
+        <main class="main-content" id="mainContent" style="display:block;">
             <div class="header">
                 <h1>Welcome, {{ session.username }}</h1>
                 <button class="toggle-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
@@ -97,112 +97,120 @@
             <!-- ══════════════════════════════════════════════════════════════
      ATTENDANCE SECTION  — replace the existing attendance section
 ══════════════════════════════════════════════════════════════ -->
-<section class="content-section active" id="attendance">
-    <div class="card">
-        <h3>Attendance</h3>
-        <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A' }}</p>
-        <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else 'N/A' }}</p>
+            <section class="content-section active" id="attendance">
+                <div class="card">
+                    <h3>Attendance</h3>
+                    <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A'
+                        }}</p>
+                    <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else
+                        'N/A' }}</p>
 
-        <div class="attendance-form">
+                    <div class="attendance-form">
 
-            <!-- ══ STEP 1: LOGIN CAMERA ══════════════════════════════════ -->
-            {% if can_login %}
+                        <!-- ══ STEP 1: LOGIN CAMERA ══════════════════════════════════ -->
+                        {% if can_login %}
 
-            <!-- Live status updated by JS -->
-            <p id="liveness-status-login" class="alert alert-info mt-2" style="display:none;"></p>
+                        <!-- Live status updated by JS -->
+                        <p id="liveness-status-login" class="alert alert-info mt-2" style="display:none;"></p>
 
-            <!-- VIDEO: always visible as a box, camera fills it when started -->
-            <video id="video" autoplay muted playsinline
-                style="width:100%; max-width:420px; height:300px; object-fit:cover;
+                        <!-- VIDEO: always visible as a box, camera fills it when started -->
+                        <video id="video" autoplay muted playsinline style="width:100%; max-width:420px; height:300px; object-fit:cover;
                        border-radius:10px; background:#1a1a2e; display:block;
                        margin-bottom:12px; border:2px solid #dee2e6;">
-            </video>
+                        </video>
 
-            <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                <button id="start-camera-btn" class="btn btn-primary" type="button">
-                    &#128247; Start Camera
-                </button>
-                <button id="stop-camera-btn" class="btn btn-danger" type="button" style="display:none;">
-                    &#9632; Stop
-                </button>
-                <!-- Revealed by JS after 2 blinks -->
-                <button id="capture-login-btn" class="btn btn-success" type="button" style="display:none;">
-                    &#10003; Confirm Login
-                </button>
-            </div>
+                        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                            <button id="start-camera-btn" class="btn btn-primary" type="button">
+                                &#128247; Start Camera
+                            </button>
+                            <button id="stop-camera-btn" class="btn btn-danger" type="button" style="display:none;">
+                                &#9632; Stop
+                            </button>
+                            <!-- Revealed by JS after 2 blinks -->
+                            <button id="capture-login-btn" class="btn btn-success" type="button" style="display:none;">
+                                &#10003; Confirm Login
+                            </button>
+                        </div>
 
-            <small class="text-muted d-block mt-1">
-                &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real person.
-            </small>
+                        <small class="text-muted d-block mt-1">
+                            &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real
+                            person.
+                        </small>
 
-            <!-- ══ STEP 2: DAILY STATUS ══════════════════════════════════ -->
-            {% elif last_login and not daily_status_submitted %}
+                        <!-- ══ STEP 2: DAILY STATUS ══════════════════════════════════ -->
+                        {% elif last_login and not daily_status_submitted %}
 
-            <textarea id="daily-status" class="form-control mb-2" rows="4"
-                placeholder="Enter your daily status report…"></textarea>
-            <button id="submit-status-btn" class="btn btn-primary" type="button">
-                &#9992; Submit Daily Status
-            </button>
+                        <textarea id="daily-status" class="form-control mb-2" rows="4"
+                            placeholder="Enter your daily status report…"></textarea>
+                        <button id="submit-status-btn" class="btn btn-primary" type="button">
+                            &#9992; Submit Daily Status
+                        </button>
 
-            <!-- ══ STEP 3: LOGOUT CAMERA ═════════════════════════════════ -->
-            {% elif last_login and daily_status_submitted and not logout_done %}
+                        <!-- ══ STEP 3: LOGOUT CAMERA ═════════════════════════════════ -->
+                        {% elif last_login and daily_status_submitted and not logout_done %}
 
-            <div class="alert alert-info">
-                &#9654; Please capture your logout photo
-            </div>
+                        <div class="alert alert-info">
+                            &#9654; Please capture your logout photo
+                        </div>
 
-            <p id="liveness-status-logout" class="alert alert-info mt-2" style="display:none;"></p>
+                        <p id="liveness-status-logout" class="alert alert-info mt-2" style="display:none;"></p>
 
-            <video id="video-logout" autoplay muted playsinline
-                style="width:100%; max-width:420px; height:300px; object-fit:cover;
+                        <video id="video-logout" autoplay muted playsinline style="width:100%; max-width:420px; height:300px; object-fit:cover;
                        border-radius:10px; background:#1a1a2e; display:block;
                        margin-bottom:12px; border:2px solid #dee2e6;">
-            </video>
+                        </video>
 
-            <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                <button id="start-camera-logout-btn" class="btn btn-primary" type="button">
-                    &#128247; Start Camera
-                </button>
-                <button id="stop-camera-logout-btn" class="btn btn-danger" type="button" style="display:none;">
-                    &#9632; Stop
-                </button>
-                <button id="capture-logout-btn" class="btn btn-success" type="button" style="display:none;">
-                    &#10003; Confirm Logout
-                </button>
-            </div>
+                        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                            <button id="start-camera-logout-btn" class="btn btn-primary" type="button">
+                                &#128247; Start Camera
+                            </button>
+                            <button id="stop-camera-logout-btn" class="btn btn-danger" type="button"
+                                style="display:none;">
+                                &#9632; Stop
+                            </button>
+                            <button id="capture-logout-btn" class="btn btn-success" type="button" style="display:none;">
+                                &#10003; Confirm Logout
+                            </button>
+                        </div>
 
-            <small class="text-muted d-block mt-1">
-                &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real person.
-            </small>
+                        <small class="text-muted d-block mt-1">
+                            &#9432; Please <strong>blink 2 times</strong> when prompted — this confirms you are a real
+                            person.
+                        </small>
 
-            <!-- ══ STEP 4: DONE ═══════════════════════════════════════════ -->
-            {% else %}
-            <div class="alert alert-success">
-                &#10003; You have completed today's attendance.
-            </div>
-            {% endif %}
+                        <!-- ══ STEP 4: DONE ═══════════════════════════════════════════ -->
+                        {% else %}
+                        <div class="alert alert-success">
+                            &#10003; You have completed today's attendance.
+                        </div>
+                        {% endif %}
 
-        </div>
+                    </div>
 
-        <h3 class="mt-4">Attendance Calendar</h3>
-        <div class="calendar">
-            <div class="calendar-header d-flex justify-content-between align-items-center mb-3">
-                <button id="prev-month" class="btn btn-outline-primary">&lt;</button>
-                <h4 id="month-year" class="m-0"></h4>
-                <button id="next-month" class="btn btn-outline-primary">&gt;</button>
-            </div>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th>
-                        <th>Fri</th><th>Sat</th><th>Sun</th>
-                    </tr>
-                </thead>
-                <tbody id="calendar-body"></tbody>
-            </table>
-        </div>
-    </div>
-</section>
+                    <h3 class="mt-4">Attendance Calendar</h3>
+                    <div class="calendar">
+                        <div class="calendar-header d-flex justify-content-between align-items-center mb-3">
+                            <button id="prev-month" class="btn btn-outline-primary">&lt;</button>
+                            <h4 id="month-year" class="m-0"></h4>
+                            <button id="next-month" class="btn btn-outline-primary">&gt;</button>
+                        </div>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                    <th>Sun</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendar-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
             <!-- Weekly Rota Section -->
             <section class="content-section" id="weekly-rota">
@@ -292,7 +300,7 @@
                     </div>
                 </div>
             </section>
-            -------------------------------------------------------------------------------------------------------
+
             <!-- ============================================================
      LEAVES SECTION v2 — Full Updated HTML
      Changes:
@@ -435,8 +443,13 @@
                                         <span>{{ leave.end_date }}</span>
                                     </div>
                                     <div class="leave-item-meta">
-                                        <span class="meta-chip chip-days"><i class="fas fa-sun"></i> {{ leave.total_days
-                                            }}d</span>
+                                        <span class="meta-chip chip-days">
+                                            <i class="fas fa-sun"></i> {{ leave.total_days }}d
+                                        </span>
+
+                                        <span class="meta-chip chip-holiday">
+                                            H:{{ leave.holiday_days or 0 }}
+                                        </span>
                                         <span class="meta-chip chip-paid">P:{{ leave.used_paid_days }}</span>
                                         <span class="meta-chip chip-comp">C:{{ leave.used_comp_days }}</span>
                                         <span class="meta-chip chip-unpaid">U:{{ leave.used_unpaid_days }}</span>
@@ -529,6 +542,7 @@
                                                 <th>From</th>
                                                 <th>To</th>
                                                 <th>Days</th>
+                                                <th>Holidays</th>
                                                 <th>Paid</th>
                                                 <th>Comp</th>
                                                 <th>Unpaid</th>
@@ -550,7 +564,7 @@
                     </div>
                 </div>
             </div>
-            ---------------------------------------------------------------------------------------------------------
+            
             <!-- Notifications Section -->
             <section class="content-section" id="notifications">
                 <div class="card">
@@ -578,121 +592,7 @@
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
 
-    <script>
-        // Calendar functionality
-        const attendanceData = {{ calendar_data | tojson }};
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth();
 
-        function renderCalendar(year, month) {
-            document.getElementById('month-year').textContent = new Date(year, month, 1).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long'
-            });
-            const tbody = document.getElementById('calendar-body');
-            tbody.innerHTML = '';
-
-            const firstDate = new Date(year, month, 1);
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const startWeekday = firstDate.getDay();
-            const emptyCells = (startWeekday + 6) % 7;
-
-            let cellIndex = 0;
-            for (let row = 0; row < 6; row++) {
-                const tr = document.createElement('tr');
-                for (let col = 0; col < 7; col++) {
-                    const td = document.createElement('td');
-                    const dayNum = cellIndex - emptyCells + 1;
-
-                    if (cellIndex < emptyCells || dayNum > daysInMonth) {
-                        td.className = 'empty';
-                        td.textContent = '';
-                    } else {
-                        const date = new Date(year, month, dayNum);
-                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                        td.title = dateStr;
-
-                        if (dateStr > todayStr) {
-                            td.className = 'future';
-                            td.textContent = dayNum;
-                        } else {
-                            if (attendanceData.hasOwnProperty(dateStr)) {
-                                const isPresent = attendanceData[dateStr];
-                                td.className = isPresent ? 'present' : 'absent';
-                            } else {
-                                td.className = 'empty';
-                            } td.textContent = dayNum;
-                        }
-                    }
-                    tr.appendChild(td);
-                    cellIndex++;
-                }
-                tbody.appendChild(tr);
-                if (cellIndex >= emptyCells + daysInMonth) break;
-            }
-        }
-
-        document.getElementById('prev-month').addEventListener('click', () => {
-            currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
-            renderCalendar(currentYear, currentMonth);
-        });
-
-        document.getElementById('next-month').addEventListener('click', () => {
-            currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            renderCalendar(currentYear, currentMonth);
-        });
-
-        // Initial calendar render
-        renderCalendar(currentYear, currentMonth);
-
-        // Section navigation
-        document.querySelectorAll('.sidebar-nav li[data-section]').forEach(item => {
-            item.addEventListener('click', function (e) {
-                e.preventDefault();
-                const sectionId = this.getAttribute('data-section');
-
-                // Update active sidebar item
-                document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
-                this.classList.add('active');
-
-                // Show corresponding section
-                document.querySelectorAll('.content-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                document.getElementById(sectionId).classList.add('active');
-            });
-        });
-
-        // Leave form submission
-    </script>
-        <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        {% if show_modal %}
-            document.getElementById("adminPopup").style.display = "flex";
-        {% else %}
-            document.getElementById("mainContent").style.display = "block";
-        {% endif %}
-    });
-
-    function goAdmin() {
-        window.location.href = "/admin/admin";
-    }
-
-    function closePopup() {
-        document.getElementById("adminPopup").style.display = "none";
-        document.getElementById("mainContent").style.display = "block";
-    }
-</script>
 
     <!-- ================================================================
      JAVASCRIPT for Leave Form + History Modal
@@ -700,58 +600,44 @@
      ================================================================ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- MediaPipe FaceMesh -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script>
+    const attendanceData = {{ calendar_data | tojson }};
+    const showModal = {{ 'true' if show_modal else 'false' }};
+</script>
 
     <!-- Custom JS file -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-    <!-- ADMIN POPUP -->
-    <div id="adminPopup" style="
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.5);
-backdrop-filter: blur(5px);
-z-index:9999;
-justify-content:center;
-align-items:center;
-">
+   <!-- ADMIN POPUP -->
+<div id="adminPopup" class="admin-popup-overlay">
 
-        <div style="
-        background:#fff;
-        padding:30px 40px;
-        border-radius:12px;
-        text-align:center;
-        width:300px;
-        box-shadow:0 10px 30px rgba(0,0,0,0.2);
-    ">
+    <div class="admin-popup-box">
 
-            <h4 style="margin-bottom:10px;">You are an Admin</h4>
-            <p style="margin-bottom:20px;">Select your dashboard:</p>
+        <h4 class="admin-popup-title">You are an Admin</h4>
 
-            <button onclick="goAdmin()" style="
-            background:#dc3545;
-            color:white;
-            border:none;
-            padding:10px 20px;
-            border-radius:6px;
-            margin-right:10px;
-        ">Admin</button>
+        <p class="admin-popup-text">
+            Select your dashboard:
+        </p>
 
-            <button onclick="closePopup()" style="
-            background:#28a745;
-            color:white;
-            border:none;
-            padding:10px 20px;
-            border-radius:6px;
-        ">User</button>
+        <button onclick="goAdmin()" class="admin-btn admin-btn-red">
+            Admin
+        </button>
 
-        </div>
+        <button onclick="closePopup()" class="admin-btn admin-btn-green">
+            User
+        </button>
+
     </div>
+</div>
+
+<!-- Profile Image Modal -->
+<div id="profileModal" class="profile-modal">
+    <span class="profile-close">&times;</span>
+    <img class="profile-modal-content" id="profileModalImg">
+</div>
+
 </body>
 
 </html>

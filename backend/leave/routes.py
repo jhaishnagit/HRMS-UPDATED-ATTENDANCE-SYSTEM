@@ -7,14 +7,34 @@ import calendar
 leave_bp = Blueprint('leave', __name__)
 
 
-def get_working_days(start_date, end_date):
-    """Count working days (Mon-Fri) between two dates inclusive."""
+def get_working_days(start_date, end_date, conn):
+
     count = 0
     current = start_date
+
+    cursor = conn.cursor(dictionary=True)
+
     while current <= end_date:
-        if current.weekday() < 5:  # Mon=0, Fri=4
-            count += 1
+
+        # Skip only Sunday
+        if current.weekday() != 6:
+
+            # Check holiday
+            cursor.execute("""
+                SELECT * FROM holidays
+                WHERE holiday_date = %s
+            """, (current,))
+
+            holiday = cursor.fetchone()
+
+            # Count only if NOT holiday
+            if not holiday:
+                count += 1
+
         current = date.fromordinal(current.toordinal() + 1)
+
+    cursor.close()
+
     return max(count, 1)
 
 
@@ -173,7 +193,27 @@ def apply_leave():
         # Sync carry-forward first
         balance = sync_monthly_carryforward(conn, user_id)
 
+        # Total leave days
         total_days = (end_date - start_date).days + 1
+
+        # Holiday count
+        holiday_days = 0
+        current = start_date
+
+        while current <= end_date:
+        
+            cursor.execute("""
+                SELECT * FROM holidays
+                WHERE holiday_date = %s
+            """, (current,))
+
+            holiday = cursor.fetchone()
+
+            if holiday:
+                holiday_days += 1
+
+            current = date.fromordinal(current.toordinal() + 1)
+
         paid_balance = balance['paid_leaves']
 
         # Check if user already used paid leave this month (1 per month rule)
@@ -210,7 +250,9 @@ def apply_leave():
         if leave_type == 'Paid Leave' and paid_balance >= 1:
             paid_days = 1
         
-        remaining_days = total_days - paid_days
+        working_days = total_days - holiday_days
+
+        remaining_days = working_days - paid_days
         
         # Step 2: Compensation leave
         if remaining_days > 0 and comp_balance > 0:
@@ -221,6 +263,26 @@ def apply_leave():
         # Step 3: Unpaid
         unpaid_days = remaining_days
 
+
+        # Check existing leave dates
+        cursor.execute("""
+            SELECT id FROM leaves
+            WHERE user_id = %s
+            AND status IN ('Pending', 'Approved')
+            AND (
+                start_date <= %s
+                AND end_date >= %s
+            )
+        """, (user_id, end_date, start_date))
+
+        existing_leave = cursor.fetchone()
+
+        if existing_leave:
+            return jsonify(
+                success=False,
+                message="You already applied leave for these dates"
+            )
+
         # Get user info for email
         cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
@@ -229,12 +291,12 @@ def apply_leave():
         cursor.execute("""
     INSERT INTO leaves (
         user_id, leave_type, start_date, end_date, reason,
-        total_days, used_paid_days, used_unpaid_days, used_comp_days, status
+        total_days, holiday_days, used_paid_days, used_unpaid_days, used_comp_days, status
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending')
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending')
 """, (
     user_id, leave_type, start_date, end_date, reason,
-    total_days, paid_days, unpaid_days, comp_days
+    total_days, holiday_days, paid_days, unpaid_days, comp_days
 ))
 
         conn.commit()
@@ -293,7 +355,7 @@ def leave_history():
     try:
         cursor.execute("""
             SELECT id, leave_type, start_date, end_date, reason,
-                   total_days, used_paid_days, used_unpaid_days,used_comp_days, status,
+                   total_days, holiday_days, used_paid_days, used_unpaid_days,used_comp_days, status,
                    created_at
             FROM leaves
             WHERE user_id = %s
@@ -315,3 +377,42 @@ def leave_history():
         cursor.close()
         conn.close()
 
+@leave_bp.route('/admin/update_leave_status/<int:leave_id>', methods=['POST'])
+def update_leave_status(leave_id):
+
+    status = request.form.get('status')
+    remarks = request.form.get('remarks')
+
+    conn = get_db_connection()
+
+    if not conn:
+        return jsonify(success=False, message="Database connection failed")
+
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute("""
+            UPDATE leaves
+            SET status=%s, remarks=%s
+            WHERE id=%s
+        """, (status, remarks, leave_id))
+
+        conn.commit()
+
+        return jsonify(
+            success=True,
+            message=f"Leave {status.lower()} successfully"
+        )
+
+    except Exception as e:
+        logging.error(f"Update leave status error: {e}")
+
+        return jsonify(
+            success=False,
+            message=str(e)
+        )
+
+    finally:
+        cursor.close()
+        conn.close()
