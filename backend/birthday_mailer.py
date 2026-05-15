@@ -225,14 +225,14 @@ def init_birthday_scheduler(app):
     scheduler.add_job(
         func=check_and_send_birthday_emails,
         args=[app],
-        trigger=CronTrigger(hour=10, minute=56),
+        trigger=CronTrigger(hour=0, minute=00),
         id='birthday_email_job',
         name='Daily Birthday Email Sender',
         replace_existing=True
     )
 
     scheduler.start()
-    logger.info('[BirthdayMailer] 🗓️  Birthday scheduler started — runs daily at 10:56 AM')
+    logger.info('[BirthdayMailer] 🗓️  Birthday scheduler started — runs daily at 12:00 AM')
 
     # Prevent scheduler from running during Flask reloader restarts
     import atexit
