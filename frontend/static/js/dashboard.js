@@ -426,33 +426,33 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(checkNotifications, 30000);
     checkNotifications();
     /* PROFILE IMAGE POPUP */
-const profilePic = document.getElementById("profile-pic");
-const profileModal = document.getElementById("profileModal");
-const profileModalImg = document.getElementById("profileModalImg");
-const profileClose = document.querySelector(".profile-close");
+    const profilePic = document.getElementById("profile-pic");
+    const profileModal = document.getElementById("profileModal");
+    const profileModalImg = document.getElementById("profileModalImg");
+    const profileClose = document.querySelector(".profile-close");
 
-if (profilePic && profileModal && profileModalImg) {
+    if (profilePic && profileModal && profileModalImg) {
 
-    profilePic.addEventListener("click", function () {
-        profileModal.style.display = "block";
-        profileModalImg.src = this.src;
-    });
+        profilePic.addEventListener("click", function () {
+            profileModal.style.display = "block";
+            profileModalImg.src = this.src;
+        });
 
-}
+    }
 
-if (profileClose && profileModal) {
+    if (profileClose && profileModal) {
 
-    profileClose.addEventListener("click", function () {
-        profileModal.style.display = "none";
-    });
-
-    window.addEventListener("click", function (e) {
-        if (e.target === profileModal) {
+        profileClose.addEventListener("click", function () {
             profileModal.style.display = "none";
-        }
-    });
+        });
 
-}
+        window.addEventListener("click", function (e) {
+            if (e.target === profileModal) {
+                profileModal.style.display = "none";
+            }
+        });
+
+    }
 });
 
 
@@ -627,81 +627,81 @@ function exportLeaveHistory() {
 
 
 
-// Calendar functionality
-const today = new Date();
-const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth();
+// // Calendar functionality
+// const today = new Date();
+// const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+// let currentYear = new Date().getFullYear();
+// let currentMonth = new Date().getMonth();
 
-function renderCalendar(year, month) {
-    document.getElementById('month-year').textContent = new Date(year, month, 1).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long'
-    });
-    const tbody = document.getElementById('calendar-body');
-    tbody.innerHTML = '';
+// function renderCalendar(year, month) {
+//     document.getElementById('month-year').textContent = new Date(year, month, 1).toLocaleDateString('en-US', {
+//         year: 'numeric',
+//         month: 'long'
+//     });
+//     const tbody = document.getElementById('calendar-body');
+//     tbody.innerHTML = '';
 
-    const firstDate = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startWeekday = firstDate.getDay();
-    const emptyCells = (startWeekday + 6) % 7;
+//     const firstDate = new Date(year, month, 1);
+//     const daysInMonth = new Date(year, month + 1, 0).getDate();
+//     const startWeekday = firstDate.getDay();
+//     const emptyCells = (startWeekday + 6) % 7;
 
-    let cellIndex = 0;
-    for (let row = 0; row < 6; row++) {
-        const tr = document.createElement('tr');
-        for (let col = 0; col < 7; col++) {
-            const td = document.createElement('td');
-            const dayNum = cellIndex - emptyCells + 1;
+//     let cellIndex = 0;
+//     for (let row = 0; row < 6; row++) {
+//         const tr = document.createElement('tr');
+//         for (let col = 0; col < 7; col++) {
+//             const td = document.createElement('td');
+//             const dayNum = cellIndex - emptyCells + 1;
 
-            if (cellIndex < emptyCells || dayNum > daysInMonth) {
-                td.className = 'empty';
-                td.textContent = '';
-            } else {
-                const date = new Date(year, month, dayNum);
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                td.title = dateStr;
+//             if (cellIndex < emptyCells || dayNum > daysInMonth) {
+//                 td.className = 'empty';
+//                 td.textContent = '';
+//             } else {
+//                 const date = new Date(year, month, dayNum);
+//                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+//                 td.title = dateStr;
 
-                if (dateStr > todayStr) {
-                    td.className = 'future';
-                    td.textContent = dayNum;
-                } else {
-                    if (attendanceData.hasOwnProperty(dateStr)) {
-                        const isPresent = attendanceData[dateStr];
-                        td.className = isPresent ? 'present' : 'absent';
-                    } else {
-                        td.className = 'empty';
-                    }
-                    td.textContent = dayNum;
-                }
-            }
-            tr.appendChild(td);
-            cellIndex++;
-        }
-        tbody.appendChild(tr);
-        if (cellIndex >= emptyCells + daysInMonth) break;
-    }
-}
+//                 if (dateStr > todayStr) {
+//                     td.className = 'future';
+//                     td.textContent = dayNum;
+//                 } else {
+//                     if (attendanceData.hasOwnProperty(dateStr)) {
+//                         const isPresent = attendanceData[dateStr];
+//                         td.className = isPresent ? 'present' : 'absent';
+//                     } else {
+//                         td.className = 'empty';
+//                     }
+//                     td.textContent = dayNum;
+//                 }
+//             }
+//             tr.appendChild(td);
+//             cellIndex++;
+//         }
+//         tbody.appendChild(tr);
+//         if (cellIndex >= emptyCells + daysInMonth) break;
+//     }
+// }
 
-document.getElementById('prev-month').addEventListener('click', () => {
-    currentMonth--;
-    if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
-    renderCalendar(currentYear, currentMonth);
-});
+// document.getElementById('prev-month').addEventListener('click', () => {
+//     currentMonth--;
+//     if (currentMonth < 0) {
+//         currentMonth = 11;
+//         currentYear--;
+//     }
+//     renderCalendar(currentYear, currentMonth);
+// });
 
-document.getElementById('next-month').addEventListener('click', () => {
-    currentMonth++;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    }
-    renderCalendar(currentYear, currentMonth);
-});
+// document.getElementById('next-month').addEventListener('click', () => {
+//     currentMonth++;
+//     if (currentMonth > 11) {
+//         currentMonth = 0;
+//         currentYear++;
+//     }
+//     renderCalendar(currentYear, currentMonth);
+// });
 
-// Initial calendar render
-renderCalendar(currentYear, currentMonth);
+// // Initial calendar render
+// renderCalendar(currentYear, currentMonth);
 
 // Section navigation
 document.querySelectorAll('.sidebar-nav li[data-section]').forEach(item => {
@@ -742,4 +742,103 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
+
+// ================= FINAL CALENDAR =================
+
+const monthYear = document.getElementById("month-year");
+const calendarBody = document.getElementById("calendar-body");
+const prevMonthBtn = document.getElementById("prev-month");
+const nextMonthBtn = document.getElementById("next-month");
+
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+
+function renderCalendar(year, month) {
+
+    monthYear.textContent =
+        new Date(year, month).toLocaleString("default", {
+            month: "long",
+            year: "numeric"
+        });
+
+    calendarBody.innerHTML = "";
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    let startDay = firstDay.getDay();
+    startDay = startDay === 0 ? 6 : startDay - 1;
+
+    let row = document.createElement("tr");
+
+    for (let i = 0; i < startDay; i++) {
+        row.innerHTML += `<td class="empty"></td>`;
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+
+        const td = document.createElement("td");
+
+        const fullDate =
+            `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        td.textContent = day;
+
+        const currentDate = new Date(year, month, day);
+
+        // Attendance Status
+        if (calendarData[fullDate] === "present") {
+            td.classList.add("present");
+        }
+        else if (calendarData[fullDate] === "absent") {
+            td.classList.add("absent");
+        }
+        else if (calendarData[fullDate] === "future") {
+            td.classList.add("future");
+        }
+
+        // Sunday
+        if (currentDate.getDay() === 0) {
+            td.classList.add("sunday-day");
+        }
+
+        // Holiday
+        if (holidayDates.includes(fullDate)) {
+            td.classList.add("holiday-day");
+        }
+
+        row.appendChild(td);
+
+        if ((startDay + day) % 7 === 0 || day === lastDay.getDate()) {
+            calendarBody.appendChild(row);
+            row = document.createElement("tr");
+        }
+    }
+}
+
+prevMonthBtn.addEventListener("click", () => {
+    currentMonth--;
+
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+
+    renderCalendar(currentYear, currentMonth);
+});
+
+nextMonthBtn.addEventListener("click", () => {
+    currentMonth++;
+
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+
+    renderCalendar(currentYear, currentMonth);
+});
+
+renderCalendar(currentYear, currentMonth);
+
+
 

@@ -1,94 +1,111 @@
-CREATE TABLE IF NOT Exists users (
-    id INT NOT NULL AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE,
-    email VARCHAR(100) UNIQUE,
-    password VARCHAR(255),
-    face_image LONGBLOB,
-    position VARCHAR(100) DEFAULT 'Employee',
-    is_admin TINYINT DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+CREATE DATABASE IF NOT EXISTS gps_face_recognition;
+USE gps_face_recognition;
+
+SHOW TABLES;
+
+-- attendance
+CREATE TABLE `attendance` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `login_time` datetime DEFAULT NULL,
+  `logout_time` datetime DEFAULT NULL,
+  `login_photo_path` varchar(255) DEFAULT NULL,
+  `logout_photo_path` varchar(255) DEFAULT NULL,
+  `login_latitude` float DEFAULT NULL,
+  `login_longitude` float DEFAULT NULL,
+  `logout_latitude` float DEFAULT NULL,
+  `logout_longitude` float DEFAULT NULL,
+  `daily_status_submitted` tinyint DEFAULT '0',
+  `admin_verified` tinyint DEFAULT '0',
+  `attendance_status` enum('Present','Absent') DEFAULT 'Absent',
+  `daily_status` text,
+  `status` text,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT Exists rota (
-    id INT NOT NULL AUTO_INCREMENT,
-    rota_image LONGBLOB,
-    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+-- daily_updates
+CREATE TABLE `daily_updates` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `update_message` text,
+  `submitted_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_verified` tinyint DEFAULT '0',
+  `verification_status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `verified_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT Exists notifications (
-    id INT NOT NULL AUTO_INCREMENT,
-    message TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_read TINYINT DEFAULT 0,
-    read_at TIMESTAMP NULL,
-    mark_done TINYINT DEFAULT 0,
-    mark_done_at TIMESTAMP NULL,
-    user_id INT,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- holidays
+CREATE TABLE `holidays` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `holiday_date` date DEFAULT NULL,
+  `holiday_name` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT Exists daily_updates (
-    id INT NOT NULL AUTO_INCREMENT,
-    user_id INT,
-    update_message TEXT,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_verified TINYINT DEFAULT 0,
-    verification_status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-    verified_at TIMESTAMP,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- leave_balance
+CREATE TABLE `leave_balance` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `total_annual_leaves` int DEFAULT '12',
+  `paid_leaves` int DEFAULT '12',
+  `compensation_leaves` int DEFAULT '0',
+  `last_updated` date DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT Exists attendance (
-    id INT NOT NULL AUTO_INCREMENT,
-    user_id INT,
-    login_time DATETIME,
-    logout_time DATETIME,
-    login_photo_path VARCHAR(255),
-    logout_photo_path VARCHAR(255),
-    login_latitude FLOAT,
-    login_longitude FLOAT,
-    logout_latitude FLOAT,
-    logout_longitude FLOAT,
-    daily_status_submitted TINYINT DEFAULT 0,
-    admin_verified TINYINT DEFAULT 0,
-    attendance_status ENUM('Present', 'Absent') DEFAULT 'Absent',
-    daily_status TEXT,
-    status TEXT,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- leaves
+CREATE TABLE `leaves` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `leave_type` enum('Paid Leave','Sick Leave','Emergency Leave') DEFAULT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `reason` text,
+  `status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `total_days` int DEFAULT NULL,
+  `used_unpaid_days` int DEFAULT '0',
+  `used_paid_days` int DEFAULT '0',
+  `used_comp_days` int DEFAULT '0',
+  `holiday_days` int DEFAULT '0',
+  `remarks` text,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT EXISTS leaves (
-    id INT NOT NULL AUTO_INCREMENT,
-    user_id INT,
-    leave_type ENUM('Sick Leave', 'Emergency Leave', 'Vocational Leave'),
-    start_date DATE,
-    end_date DATE,
-    reason TEXT,
-    status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+-- notifications
+CREATE TABLE `notifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `message` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_read` tinyint DEFAULT '0',
+  `read_at` timestamp NULL DEFAULT NULL,
+  `mark_done` tinyint DEFAULT '0',
+  `mark_done_at` timestamp NULL DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT EXISTS leave_balance (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
-    total_annual_leaves INT DEFAULT 12,
-    paid_leaves INT DEFAULT 12,
-    compensation_leaves INT DEFAULT 0,
-    last_updated DATE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+-- rota
+CREATE TABLE `rota` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `rota_image` longblob,
+  `uploaded_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `holiday_table` mediumtext,
+  PRIMARY KEY (`id`)
 );
 
-CREATE TABLE IF NOT EXISTS holidays (
-    id INT NOT NULL AUTO_INCREMENT,
-    holiday_date DATE UNIQUE,
-    holiday_name VARCHAR(100),
-    PRIMARY KEY (id)
+-- users
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `face_image` longblob,
+  `position` varchar(100) DEFAULT 'Employee',
+  `is_admin` tinyint DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `dob` date DEFAULT NULL,
+  PRIMARY KEY (`id`)
 );

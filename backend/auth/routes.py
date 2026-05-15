@@ -98,6 +98,12 @@ def validate_password(password):
 # REGISTER
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+
+    # Only admin can access register page
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash("Admin access required")
+        return redirect(url_for('auth.login'))
+        
     if request.method == 'POST':
         username = request.form.get('username')
         import re

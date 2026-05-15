@@ -58,18 +58,11 @@ body {
         /* Hide on mobile */
     }
 
-    .sidebar-pc.offcanvas {
-        display: block;
-        /* Enable offcanvas on mobile */
-        position: absolute;
-        transform: translateX(-100%);
-        /* Hidden by default */
-    }
+   .sidebar-pc.offcanvas {
+    visibility: visible !important;
+}
 
-    .sidebar-pc.offcanvas.show {
-        transform: none;
-        /* Show when toggled */
-    }
+
 
     .main-content {
         margin-left: 0;
@@ -1613,4 +1606,78 @@ body {
 
 #profile-pic {
     cursor: pointer;
+}
+
+/* Sunday */
+.calendar td.sunday-day {
+    background: yellow !important;
+    color: black !important;
+}
+
+/* Holiday */
+.calendar td.holiday-day {
+    background: orange !important;
+    color: white !important;
+}
+
+/* MOBILE FIX FOR LEAVES SECTION */
+@media screen and (max-width: 768px) {
+
+    .leave-panel-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .leave-apply-col,
+    .leave-history-col {
+        width: 100%;
+        padding: 16px;
+    }
+
+    .leave-item {
+        width: 100%;
+        padding: 14px;
+        overflow: hidden;
+    }
+
+    .leave-item-type,
+    .leave-item-dates,
+    .leave-item-meta {
+        width: 100%;
+    }
+
+    .leave-item-dates {
+        flex-wrap: wrap;
+        font-size: 13px;
+        gap: 4px;
+    }
+
+    .leave-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .meta-chip,
+    .leave-status-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .lhm-table-wrap {
+        overflow-x: auto;
+    }
+
+    .lhm-table {
+        min-width: 900px;
+    }
+
+    .leave-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .leave-stat-card {
+        width: 100%;
+    }
 }

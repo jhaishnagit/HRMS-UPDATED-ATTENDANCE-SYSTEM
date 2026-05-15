@@ -60,19 +60,36 @@ def dashboard():
 
     records = cursor.fetchall()
     calendar_data = {}
+    # Get holiday dates
+    cursor.execute("SELECT holiday_date FROM holidays")
+    holiday_rows = cursor.fetchall()
+
+    holiday_dates = []
+
+    for h in holiday_rows:
+        holiday_dates.append(str(h['holiday_date']))
 
     start_date = today.replace(day=1)
     next_month = today.replace(month=today.month % 12 + 1, day=1)
     end_date = next_month - timedelta(days=1)
 
     current = start_date
+    # while current <= end_date:
+    #     calendar_data[str(current)] = False
+    #     current += timedelta(days=1)
     while current <= end_date:
-        calendar_data[str(current)] = False
+
+    # Future dates should stay empty
+        if current > today:
+            calendar_data[str(current)] = "future"
+        else:
+            calendar_data[str(current)] = "absent"
+
         current += timedelta(days=1)
 
     for r in records:
-        if r['date']:
-            calendar_data[str(r['date'])] = True
+        if r['date'] and r['attendance_status']:
+             calendar_data[str(r['date'])] = r['attendance_status'].lower()
 
     # LEAVES
     balance = sync_monthly_carryforward(conn, session['user_id'])
@@ -163,6 +180,7 @@ def dashboard():
         notifications=notifications,
         paid_leave_balance=paid_leave_balance,
         compensation_leaves=compensation_leaves,
+        holiday_dates=holiday_dates,
     )
 
 

@@ -44,8 +44,8 @@ admin_bp = Blueprint('admin', __name__)
 @admin_bp.route('/admin')
 def admin():
     logging.info(f"Accessing admin route with session: {dict(session)}")
-    if not session.get('is_admin'):
-        flash("Access denied", "error")
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash("Please login as admin", "error")
         return redirect(url_for('auth.login'))
 
     view = request.args.get('view', 'daily')
@@ -173,9 +173,9 @@ def admin():
 
 @admin_bp.route('/admin_leaves')
 def admin_leaves():
-    if not session.get('is_admin'):
-        flash("Access denied", "error")
-        return redirect(url_for('login'))
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash("Please login as admin", "error")
+        return redirect(url_for('auth.login'))
 
     conn = get_db_connection()
     if not conn:
@@ -634,8 +634,8 @@ def update_attendance_status(attendance_id):
 @admin_bp.route('/view_excel')
 def view_excel():
     if not session.get('is_admin'):
-        flash("Access denied", "error")
-        return redirect(url_for('login'))
+        flash("Please login as admin", "error")
+        return redirect(url_for('auth.login'))
 
     conn = get_db_connection()
     if not conn:
@@ -679,8 +679,8 @@ def view_excel():
 @admin_bp.route('/export_page')
 def export_page():
     if not session.get('is_admin'):
-        flash("Access denied", "error")
-        return redirect(url_for('login'))
+        flash("Please login as admin", "error")
+        return redirect(url_for('auth.login'))
     return render_template('export.html')
 
 

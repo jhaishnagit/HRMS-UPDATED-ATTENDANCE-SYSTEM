@@ -196,24 +196,47 @@ def apply_leave():
         # Total leave days
         total_days = (end_date - start_date).days + 1
 
-        # Holiday count
+        # # Holiday count
+        # holiday_days = 0
+        # current = start_date
+
+        # while current <= end_date:
+        
+        #     cursor.execute("""
+        #         SELECT * FROM holidays
+        #         WHERE holiday_date = %s
+        #     """, (current,))
+
+        #     holiday = cursor.fetchone()
+
+        #     if holiday:
+        #         holiday_days += 1
+
+        #     current = date.fromordinal(current.toordinal() + 1)
+
+        # Holiday + Sunday count
         holiday_days = 0
         current = start_date
-
+        
         while current <= end_date:
         
+            # Check Sunday
+            is_sunday = current.weekday() == 6
+        
+            # Check Holiday
             cursor.execute("""
                 SELECT * FROM holidays
                 WHERE holiday_date = %s
             """, (current,))
-
+        
             holiday = cursor.fetchone()
-
-            if holiday:
+        
+            # Count Sunday OR Holiday
+            if is_sunday or holiday:
                 holiday_days += 1
-
+        
             current = date.fromordinal(current.toordinal() + 1)
-
+        
         paid_balance = balance['paid_leaves']
 
         # Check if user already used paid leave this month (1 per month rule)
