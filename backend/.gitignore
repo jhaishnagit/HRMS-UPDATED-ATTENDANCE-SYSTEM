@@ -7,3 +7,8 @@ __pycache__/
 venv/
 
 backend/static/uploads/attendance/
+
+.vscode/
+__pycache__/
+README
+README.md
