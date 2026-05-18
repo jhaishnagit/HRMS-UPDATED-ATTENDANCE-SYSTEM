@@ -14,17 +14,32 @@ document.addEventListener("DOMContentLoaded", function () {
     const sidebar = document.getElementById('sidebar');
     let stream = null;
 
-    // Toggle sidebar for mobile
-    if (window.innerWidth < 992) {
-        sidebar.classList.add('offcanvas', 'offcanvas-start');
-        const toggleBtn = document.querySelector('.toggle-btn');
-        if (toggleBtn) toggleBtn.addEventListener('click', () => sidebar.classList.add('show'));
-        const closeBtn = document.getElementById('close-btn');
-        if (closeBtn) {
-            closeBtn.classList.remove('d-none');
-            closeBtn.addEventListener('click', () => sidebar.classList.remove('show'));
-        }
+   // Mobile sidebar fix
+if (window.innerWidth < 992) {
+
+    sidebar.classList.add('offcanvas', 'offcanvas-start');
+
+    const closeBtn = document.getElementById('close-btn');
+
+    if (closeBtn) {
+        closeBtn.classList.remove('d-none');
     }
+
+    // Auto close sidebar after clicking menu
+    document.querySelectorAll('.sidebar-nav li').forEach(item => {
+
+        item.addEventListener('click', () => {
+
+            const bsOffcanvas =
+                bootstrap.Offcanvas.getInstance(sidebar);
+
+            if (bsOffcanvas) {
+                bsOffcanvas.hide();
+            }
+        });
+
+    });
+}
 
     // Navigation
     navItems.forEach(item => {
@@ -839,6 +854,43 @@ nextMonthBtn.addEventListener("click", () => {
 });
 
 renderCalendar(currentYear, currentMonth);
+
+
+
+
+// Daily Tasks Filter + Stats Counter
+document.addEventListener('DOMContentLoaded', function () {
+    const items = document.querySelectorAll('.dt-task-item');
+    const filterBtns = document.querySelectorAll('.dt-filter-btn');
+
+    // Count stats
+    let total = items.length, approved = 0, pending = 0, rejected = 0;
+    items.forEach(i => {
+        const s = i.dataset.status;
+        if (s === 'Approved') approved++;
+        else if (s === 'Rejected') rejected++;
+        else pending++;
+    });
+
+    const el = (id) => document.getElementById(id);
+    if (el('dt-total-count'))    el('dt-total-count').textContent    = total;
+    if (el('dt-approved-count')) el('dt-approved-count').textContent = approved;
+    if (el('dt-pending-count'))  el('dt-pending-count').textContent  = pending;
+    if (el('dt-rejected-count')) el('dt-rejected-count').textContent = rejected;
+
+    // Filter tabs
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.dataset.filter;
+            items.forEach(item => {
+                item.style.display = (filter === 'all' || item.dataset.status === filter) ? 'flex' : 'none';
+            });
+        });
+    });
+});
+
 
 
 

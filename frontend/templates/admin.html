@@ -56,6 +56,14 @@
                             <span class="sidebar-text">Attendance</span></a></li>
                     <li data-section="users"><a href="#"><i class="fas fa-users"></i> <span class="sidebar-text">Manage
                                 Users</span></a></li>
+                    <li data-section="tasks">
+                        <a href="#">
+                            <i class="fas fa-tasks"></i>
+                            <span class="sidebar-text">
+                                Manage Tasks
+                            </span>
+                        </a>
+                    </li>
                     <li data-section="rota"><a href="#"><i class="fas fa-calendar-week"></i> <span
                                 class="sidebar-text">Upload Rota</span></a></li>
                     <li data-section="holiday">
@@ -192,6 +200,264 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Manage Tasks Section -->
+            <!-- <section class="content-section" id="tasks">
+
+                    <div class="card">
+
+                        <h3>Employee Tasks</h3>
+
+                        <div class="table-responsive">
+
+                            <table class="table table-striped">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>Employee ID</th>
+
+                                        <th>Project</th>
+
+                                        <th>Task</th>
+
+                                        <th>Time</th>
+
+                                        <th>Status</th>
+
+                                        <th>Action</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {% for task in tasks %}
+
+                                    <tr>
+
+                                        <td>{{ task.employee_id }}</td>
+
+                                        <td>{{ task.project_name }}</td>
+
+                                        <td>{{ task.task_name }}</td>
+
+                                        <td>{{ task.time_period }}</td>
+
+                                        <td>{{ task.status }}</td>
+
+                                        <td>
+
+                                            <a href="/admin/approve-task/{{ task.id }}" class="btn btn-success btn-sm">
+
+                                                Approve
+
+                                            </a>
+
+                                            <a href="/admin/reject-task/{{ task.id }}" class="btn btn-danger btn-sm">
+
+                                                Reject
+
+                                            </a>
+
+                                        </td>
+
+                                    </tr>
+
+                                    {% endfor %}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </section> -->
+
+            <!-- ============================================================
+        ADMIN TASKS SECTION — Replace existing #tasks section
+        in frontend/templates/admin.html
+        ============================================================ -->
+            <section class="content-section" id="tasks">
+                <div class="card">
+                    <div class="admin-tasks-wrapper">
+
+                        <!-- Header + Stats -->
+                        <div class="admin-tasks-header">
+                            <div class="admin-tasks-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Employee Task Management</span>
+                            </div>
+                            <div class="admin-task-stats">
+                                <div class="admin-task-stat">
+                                    <span class="admin-task-stat-val">{{ tasks | length }}</span>
+                                    <span class="admin-task-stat-label">Total</span>
+                                </div>
+                                <div class="admin-task-stat at-approved">
+                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                        'Approved') | list | length }}</span>
+                                    <span class="admin-task-stat-label">Approved</span>
+                                </div>
+                                <div class="admin-task-stat at-pending">
+                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                        'Pending') | list | length }}</span>
+                                    <span class="admin-task-stat-label">Pending</span>
+                                </div>
+                                <div class="admin-task-stat at-rejected">
+                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                        'Rejected') | list | length }}</span>
+                                    <span class="admin-task-stat-label">Rejected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- SEARCH + FILTER -->
+<div class="admin-task-filters">
+
+    <!-- Search -->
+    <div class="task-search-box">
+        <i class="fas fa-search"></i>
+
+        <input
+            type="text"
+            id="taskSearch"
+            placeholder="Search employee, project, task..."
+        >
+    </div>
+
+    <!-- Project Filter -->
+    <div class="task-filter-box">
+        <i class="fas fa-folder"></i>
+
+        <select id="projectFilter">
+            <option value="all">All Projects</option>
+
+            {% for task in tasks %}
+            <option value="{{ task.project_name }}">
+                {{ task.project_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+</div>
+
+                        <!-- Table -->
+                        <div class="admin-tasks-table-wrap">
+                            <div class="table-responsive">
+                                <table class="admin-tasks-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Employee</th>
+                                            <th>Project</th>
+                                            <th>Task</th>
+                                            <th>Time Period</th>
+                                            <th>Submitted</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if tasks %}
+                                        {% for task in tasks %}
+                                        <tr>
+                                            <td style="color:#9ca3af;font-size:0.78rem;font-weight:600;">
+                                                #{{ loop.index }}
+                                            </td>
+                                            <td>
+
+
+                                                <div>
+                                                    <div class="at-emp-name">
+                                                        {{ task.employee_name }}
+                                                    </div>
+
+                                                    <div class="at-emp-id">
+                                                        Employee ID: {{ task.employee_id }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="at-project-tag">
+                                                    <i class="fas fa-folder"></i> {{ task.project_name }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="at-task-name" title="{{ task.task_name }}">
+                                                    {{ task.task_name }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="at-time-chip">
+                                                    <i class="fas fa-hourglass-half"></i>
+                                                    {{ task.time_period or 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td style="color:#6b7280;font-size:0.78rem;">
+                                                {% if task.created_at %}
+                                                {{ task.created_at.strftime('%d %b %Y') }}
+                                                {% else %}
+                                                —
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="at-badge
+                                                {% if task.status == 'Approved' %}at-badge-approved
+                                                {% elif task.status == 'Rejected' %}at-badge-rejected
+                                                {% else %}at-badge-pending{% endif %}">
+                                                    {{ task.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if task.status == 'Pending' %}
+                                                <div class="at-action-btns">
+                                                    <a href="/admin/approve-task/{{ task.id }}" class="at-btn-approve"
+                                                        onclick="return confirm('Approve this task?')">
+                                                        <i class="fas fa-check"></i> Approve
+                                                    </a>
+                                                    <a href="/admin/reject-task/{{ task.id }}" class="at-btn-reject"
+                                                        onclick="return confirm('Reject this task? The employee will be marked Absent and an email will be sent.')">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </a>
+                                                </div>
+                                                {% else %}
+                                                <span class="at-done-text">
+                                                    {% if task.status == 'Approved' %}
+                                                    <i class="fas fa-check-circle" style="color:#059669;"></i> Done
+                                                    {% else %}
+                                                    <i class="fas fa-times-circle" style="color:#dc2626;"></i> Done
+                                                    {% endif %}
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="8">
+                                                <div class="at-empty">
+                                                    <i class="fas fa-clipboard-list"></i>
+                                                    <p style="font-weight:700;color:#6b7280;margin:0 0 4px;">No tasks
+                                                        submitted yet</p>
+                                                    <span style="font-size:0.82rem;">Employee tasks will appear
+                                                        here</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -394,15 +660,15 @@
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 
     <!-- ADMIN PROFILE IMAGE MODAL -->
-<div id="adminProfileModal" class="profile-modal">
-    <span class="profile-close">&times;</span>
-    <img class="profile-modal-content" id="adminProfileModalImg">
-</div>
-<!-- USER PROFILE IMAGE MODAL -->
-<div id="userProfileModal" class="profile-modal">
-    <span class="profile-close">&times;</span>
-    <img class="profile-modal-content" id="userProfileModalImg">
-</div>
+    <div id="adminProfileModal" class="profile-modal">
+        <span class="profile-close">&times;</span>
+        <img class="profile-modal-content" id="adminProfileModalImg">
+    </div>
+    <!-- USER PROFILE IMAGE MODAL -->
+    <div id="userProfileModal" class="profile-modal">
+        <span class="profile-close">&times;</span>
+        <img class="profile-modal-content" id="userProfileModalImg">
+    </div>
 </body>
 
 </html>

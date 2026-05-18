@@ -109,3 +109,23 @@ CREATE TABLE `users` (
   `dob` date DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
+
+
+CREATE TABLE daily_tasks (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    employee_id INT NOT NULL,
+
+    project_name VARCHAR(255) NOT NULL,
+
+    task_name VARCHAR(255) NOT NULL,
+
+    time_period VARCHAR(100),
+
+    status ENUM('Pending','Approved','Rejected')
+    DEFAULT 'Pending',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+);

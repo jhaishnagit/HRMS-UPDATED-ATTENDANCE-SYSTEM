@@ -414,3 +414,38 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+const taskSearch = document.getElementById("taskSearch");
+const projectFilter = document.getElementById("projectFilter");
+
+function filterTasks() {
+
+    const searchValue = taskSearch.value.toLowerCase();
+    const projectValue = projectFilter.value.toLowerCase();
+
+    const rows = document.querySelectorAll(".admin-tasks-table tbody tr");
+
+    rows.forEach(row => {
+
+        const text = row.innerText.toLowerCase();
+
+        const projectCell = row.children[2]?.innerText.toLowerCase();
+
+        const matchesSearch = text.includes(searchValue);
+
+        const matchesProject =
+            projectValue === "all" ||
+            projectCell.includes(projectValue);
+
+        if(matchesSearch && matchesProject){
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+
+    });
+}
+
+taskSearch.addEventListener("keyup", filterTasks);
+
+projectFilter.addEventListener("change", filterTasks);

@@ -91,8 +91,6 @@ def admin():
             WHERE {where_clause}
             ORDER BY a.login_time DESC
         """
-        cursor.execute(query)
-        data = cursor.fetchall()
 
         def process_records(records):
             for record in records:
@@ -105,8 +103,6 @@ def admin():
                 else:
                     record['hours_worked'] = "N/A"
                     record['color'] = 'black'
-
-        # 👉 Only ONE query (this is the fix)
 
         if search_query:
             cursor.execute("""
@@ -124,11 +120,7 @@ def admin():
             cursor.execute(query)
 
         data = cursor.fetchall()
-
-        # process data
         process_records(data)
-
-        # use same data everywhere
         all_attendance = data
 
         # ── Rota (image) ──────────────────────────────────────────────────
@@ -145,6 +137,7 @@ def admin():
         if holiday_row and holiday_row.get('holiday_table'):
             holiday_table = holiday_row['holiday_table']
 
+        # ── Read notifications ────────────────────────────────────────────
         cursor.execute("""
             SELECT n.id, n.message, n.created_at, n.read_at, u.username
             FROM notifications n
@@ -154,11 +147,29 @@ def admin():
         """)
         read_notifications = cursor.fetchall()
 
-        return render_template('admin.html', data=data, view=view, admin_profile=admin_profile,
-                               users=users, all_attendance=all_attendance, search_query=search_query,
-                               rota_image_base64=rota_image_base64,
-                               holiday_table=holiday_table,
-                               read_notifications=read_notifications)
+        # ── Tasks ─────────────────────────────────────────────────────────
+        cursor.execute("""
+            SELECT dt.*, u.username as employee_name
+            FROM daily_tasks dt
+            LEFT JOIN users u ON u.id = dt.employee_id
+            ORDER BY dt.created_at DESC
+        """)
+        tasks = cursor.fetchall()
+
+        return render_template(
+            'admin.html',
+            data=data,
+            view=view,
+            admin_profile=admin_profile,
+            users=users,
+            all_attendance=all_attendance,
+            tasks=tasks,
+            search_query=search_query,
+            rota_image_base64=rota_image_base64,
+            holiday_table=holiday_table,
+            read_notifications=read_notifications
+        )
+
     except Exception as e:
         logging.error(f"Admin route error: {str(e)}")
         flash(f"Error loading admin page: {str(e)}", "error")
@@ -186,7 +197,8 @@ def admin_leaves():
     try:
         cursor.execute("""
             SELECT l.id, l.leave_type, l.start_date, l.end_date, l.reason,
-                   l.status, l.created_at, l.total_days, l.holiday_days, l.used_paid_days, l.used_unpaid_days,l.used_comp_days,
+                   l.status, l.created_at, l.total_days, l.holiday_days,
+                   l.used_paid_days, l.used_unpaid_days, l.used_comp_days,
                    u.username, u.email
             FROM leaves l
             JOIN users u ON l.user_id = u.id
@@ -234,19 +246,12 @@ def update_leave_status(leave_id):
             return jsonify({"success": False, "message": f"Leave is already {leave['status']}"})
 
         if status == 'Approved':
-            # paid_to_deduct = leave['used_paid_days'] or 0
-            # if paid_to_deduct > 0:
-            #     cursor.execute("""
-            #         UPDATE leave_balance
-            #         SET paid_leaves = GREATEST(paid_leaves - %s, 0)
-            #         WHERE user_id = %s
-            #     """, (paid_to_deduct, leave['user_id']))
             paid_to_deduct = leave['used_paid_days'] or 0
             comp_to_deduct = leave.get('used_comp_days', 0) or 0
 
             cursor.execute("""
                 UPDATE leave_balance
-                SET 
+                SET
                     paid_leaves = GREATEST(paid_leaves - %s, 0),
                     compensation_leaves = GREATEST(compensation_leaves - %s, 0)
                 WHERE user_id = %s
@@ -266,7 +271,7 @@ Leave Details:
   • Leave Type  : {leave['leave_type']}
   • From Date   : {leave['start_date']}
   • To Date     : {leave['end_date']}
-  • Total Days  : {leave['total_days']} day(s)  ({paid_to_deduct} paid / {leave.get('used_comp_days',0)} comp / {leave['used_unpaid_days']} unpaid)
+  • Total Days  : {leave['total_days']} day(s)  ({paid_to_deduct} paid / {leave.get('used_comp_days', 0)} comp / {leave['used_unpaid_days']} unpaid)
   • Reason      : {leave['reason']}
   • Status      : ✅ APPROVED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -346,7 +351,7 @@ def approve_leave(leave_id):
 
         cursor.execute("""
             UPDATE leave_balance
-            SET 
+            SET
                 paid_leaves = GREATEST(paid_leaves - %s, 0),
                 compensation_leaves = GREATEST(compensation_leaves - %s, 0)
             WHERE user_id = %s
@@ -532,21 +537,19 @@ def upload_holiday():
     filename = file.filename.lower()
     allowed_extensions = ['.xls', '.xlsx', '.csv']
     file_ext = os.path.splitext(filename)[1]
-    
+
     if file_ext not in allowed_extensions:
         return jsonify({"success": False, "message": "Only Excel or CSV files allowed"})
-    
+
     try:
         if filename.endswith('.csv'):
             df = pd.read_csv(file)
         else:
             df = pd.read_excel(file)
 
-        # Clean up empty rows/cols
         df.dropna(how='all', inplace=True)
         df.fillna('', inplace=True)
 
-        # Convert to styled HTML table
         table_html = df.to_html(
             classes='holiday-data-table',
             index=False,
@@ -559,7 +562,6 @@ def upload_holiday():
             return jsonify({"success": False, "message": "Database error"})
 
         cursor = conn.cursor()
-        # Keep only the latest holiday table — clear old, insert new
         cursor.execute("DELETE FROM rota")
         cursor.execute("INSERT INTO rota (holiday_table) VALUES (%s)", (table_html,))
         conn.commit()
@@ -734,6 +736,7 @@ def export():
             cursor.close()
             conn.close()
 
+
 @admin_bp.route('/update_profile', methods=['POST'])
 def update_profile():
     if not session.get('user_id'):
@@ -778,12 +781,9 @@ def delete_user(user_id):
     cursor = conn.cursor()
 
     try:
-        # delete child records first
         cursor.execute("DELETE FROM leave_balance WHERE user_id = %s", (user_id,))
         cursor.execute("DELETE FROM leaves WHERE user_id = %s", (user_id,))
         cursor.execute("DELETE FROM attendance WHERE user_id = %s", (user_id,))
-
-        # then delete user
         cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn.commit()
         return jsonify({"success": True})
@@ -792,3 +792,125 @@ def delete_user(user_id):
     finally:
         cursor.close()
         conn.close()
+
+
+@admin_bp.route('/approve-task/<int:task_id>')
+def approve_task(task_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT dt.*, u.username
+            FROM daily_tasks dt
+            JOIN users u ON u.id = dt.employee_id
+            WHERE dt.id = %s
+        """, (task_id,))
+        task = cursor.fetchone()
+
+        if task:
+            cursor.execute("""
+                UPDATE daily_tasks SET status = 'Approved' WHERE id = %s
+            """, (task_id,))
+
+            cursor.execute("""
+                INSERT INTO notifications (message, user_id)
+                VALUES (%s, %s)
+            """, (
+                f"Your task '{task['task_name']}' for project '{task['project_name']}' has been approved! ✅",
+                task['employee_id']
+            ))
+            conn.commit()
+
+    except Exception as e:
+        logging.error(f"approve_task error: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('admin.admin'))
+
+
+@admin_bp.route('/reject-task/<int:task_id>')
+def reject_task(task_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Get task + employee details in one query
+        cursor.execute("""
+            SELECT dt.*, u.email, u.username
+            FROM daily_tasks dt
+            JOIN users u ON u.id = dt.employee_id
+            WHERE dt.id = %s
+        """, (task_id,))
+        task = cursor.fetchone()
+
+        if not task:
+            flash("Task not found", "error")
+            return redirect(url_for('admin.admin'))
+
+        # Mark task as Rejected
+        cursor.execute("""
+            UPDATE daily_tasks SET status = 'Rejected' WHERE id = %s
+        """, (task_id,))
+
+        # Mark attendance as Absent for today
+        cursor.execute("""
+            UPDATE attendance
+            SET attendance_status = 'Absent'
+            WHERE user_id = %s
+              AND DATE(login_time) = CURDATE()
+        """, (task['employee_id'],))
+
+        conn.commit()
+
+        # Send rejection email
+        email_subject = "⚠️ Daily Task Rejected — Attendance Marked Absent"
+        email_body = f"""
+Dear {task['username']},
+
+We regret to inform you that your daily task has been REJECTED by the admin.
+
+Task Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • Project     : {task['project_name']}
+  • Task        : {task['task_name']}
+  • Time Period : {task.get('time_period') or 'N/A'}
+  • Status      : ❌ REJECTED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Since your task was not completed within the time period of
+"{task.get('time_period') or 'N/A'}", your attendance for today
+has been marked as ABSENT.
+
+If you believe this is an error, please contact your manager.
+
+Regards,
+HR Administration Team
+        """
+
+        try:
+            send_email(task['email'], email_subject, email_body)
+        except Exception as mail_err:
+            logging.warning(f"Task rejection email failed: {mail_err}")
+
+        # Add in-app notification
+        cursor.execute("""
+            INSERT INTO notifications (message, user_id)
+            VALUES (%s, %s)
+        """, (
+            f"Your task '{task['task_name']}' for project '{task['project_name']}' "
+            f"has been rejected. Attendance marked Absent.",
+            task['employee_id']
+        ))
+        conn.commit()
+
+    except Exception as e:
+        logging.error(f"reject_task error: {e}")
+        flash(f"Error: {str(e)}", "error")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('admin.admin'))

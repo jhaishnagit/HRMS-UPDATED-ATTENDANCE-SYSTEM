@@ -17,9 +17,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 
     <script>
-    const holidayDates = {{ holiday_dates | tojson }};
-    const calendarData = {{ calendar_data | tojson }};
-</script>
+        const holidayDates = {{ holiday_dates | tojson }};
+        const calendarData = {{ calendar_data | tojson }};
+    </script>
 
 </head>
 
@@ -60,6 +60,12 @@
                 <ul class="sidebar-nav">
                     <li class="active" data-section="attendance"><a href="#" class="active"><i class="fas fa-clock"></i>
                             <span class="sidebar-text">Attendance</span></a></li>
+                    <li data-section="daily-tasks">
+                        <a href="#">
+                            <i class="fas fa-tasks"></i>
+                            <span class="sidebar-text">Daily Tasks</span>
+                        </a>
+                    </li>
                     <li data-section="weekly-rota"><a href="#"><i class="fas fa-calendar-week"></i> <span
                                 class="sidebar-text">Weekly Rota</span></a></li>
                     <li data-section="holidays"><a href="#"><i class="fas fa-calendar-alt"></i> <span
@@ -70,6 +76,7 @@
                                 Mailbox</span></a></li>
                     <li data-section="leaves"><a href="#"><i class="fas fa-umbrella-beach"></i> <span
                                 class="sidebar-text">Leaves</span></a></li>
+
                     <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span
                                 class="sidebar-text">Notifications</span></a></li>
                     <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> <span
@@ -217,6 +224,228 @@
                     </div>
                 </div>
             </section>
+
+
+
+
+    <!-- ============================================================
+     DAILY TASKS SECTION — Replace existing #daily-tasks section
+     in frontend/templates/dashboard.html
+     ============================================================ -->
+<section class="content-section" id="daily-tasks">
+
+    <div class="dt-wrapper">
+
+        <!-- ── Page Header ── -->
+        <div class="dt-page-header">
+            <div class="dt-page-title">
+                <div class="dt-title-icon"><i class="fas fa-tasks"></i></div>
+                <div>
+                    <h2>Daily Tasks</h2>
+                    <p>Log your work and track progress</p>
+                </div>
+            </div>
+            <div class="dt-stats-mini">
+                <div class="dt-mini-stat">
+                    <span class="dt-mini-val" id="dt-total-count">0</span>
+                    <span class="dt-mini-label">Total</span>
+                </div>
+                <div class="dt-mini-stat approved">
+                    <span class="dt-mini-val" id="dt-approved-count">0</span>
+                    <span class="dt-mini-label">Approved</span>
+                </div>
+                <div class="dt-mini-stat pending">
+                    <span class="dt-mini-val" id="dt-pending-count">0</span>
+                    <span class="dt-mini-label">Pending</span>
+                </div>
+                <div class="dt-mini-stat rejected">
+                    <span class="dt-mini-val" id="dt-rejected-count">0</span>
+                    <span class="dt-mini-label">Rejected</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Main Grid ── -->
+        <div class="dt-grid">
+
+            <!-- LEFT: Submit Form -->
+            <div class="dt-form-col">
+                <div class="dt-form-card">
+                    <div class="dt-form-header">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add New Task</span>
+                    </div>
+
+                    <form method="POST" action="/add-task" id="dt-add-form">
+
+                        <div class="dt-field">
+                            <label class="dt-label">
+                                <i class="fas fa-folder"></i> Project Name
+                            </label>
+                            <input type="text" name="project_name" class="dt-input"
+                                placeholder="e.g. HRMS Portal" required autocomplete="off">
+                        </div>
+
+                        <div class="dt-field">
+                            <label class="dt-label">
+                                <i class="fas fa-clipboard-list"></i> Task Name
+                            </label>
+                            <input type="text" name="task_name" class="dt-input"
+                                placeholder="e.g. Fix login bug" required autocomplete="off">
+                        </div>
+
+                        <div class="dt-field">
+                            <label class="dt-label">
+                                <i class="fas fa-hourglass-half"></i> Time Period
+                            </label>
+                            <input type="text" name="time_period" class="dt-input"
+                                placeholder="e.g. 2 Hours / 1 Day" autocomplete="off">
+                            <span class="dt-hint">This will be used for attendance tracking if rejected</span>
+                        </div>
+
+                        <button type="submit" class="dt-submit-btn">
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Task
+                        </button>
+
+                    </form>
+                </div>
+
+                <!-- Info Card -->
+                <div class="dt-info-card">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Note:</strong> If your task is rejected by admin, the time period
+                        you mentioned will be marked as <strong>Absent</strong> and you'll receive
+                        an email notification.
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Task History -->
+            <div class="dt-history-col">
+                <div class="dt-history-card">
+                    <div class="dt-history-header">
+                        <h5><i class="fas fa-history"></i> Task History</h5>
+                        <div class="dt-filter-tabs">
+                            <button class="dt-filter-btn active" data-filter="all">All</button>
+                            <button class="dt-filter-btn" data-filter="Pending">Pending</button>
+                            <button class="dt-filter-btn" data-filter="Approved">Approved</button>
+                            <button class="dt-filter-btn" data-filter="Rejected">Rejected</button>
+                        </div>
+                    </div>
+
+                    <div class="dt-task-list" id="dt-task-list">
+
+                        {% if tasks %}
+                            {% for task in tasks %}
+                            <div class="dt-task-item" data-status="{{ task.status }}">
+                                <div class="dt-task-left">
+                                    <div class="dt-task-icon
+                                        {% if task.status == 'Approved' %}dt-icon-approved
+                                        {% elif task.status == 'Rejected' %}dt-icon-rejected
+                                        {% else %}dt-icon-pending{% endif %}">
+                                        {% if task.status == 'Approved' %}
+                                            <i class="fas fa-check"></i>
+                                        {% elif task.status == 'Rejected' %}
+                                            <i class="fas fa-times"></i>
+                                        {% else %}
+                                            <i class="fas fa-clock"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="dt-task-info">
+                                        <div class="dt-task-name">{{ task.task_name }}</div>
+                                        <div class="dt-task-project">
+                                            <i class="fas fa-folder-open"></i> {{ task.project_name }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dt-task-right">
+                                    <div class="dt-task-meta">
+                                        <span class="dt-time-chip">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            {{ task.time_period or 'N/A' }}
+                                        </span>
+                                        <span class="dt-task-date">
+                                            {{ task.created_at.strftime('%d %b %Y') if task.created_at else '' }}
+                                        </span>
+                                    </div>
+                                    <span class="dt-status-badge
+                                        {% if task.status == 'Approved' %}dt-badge-approved
+                                        {% elif task.status == 'Rejected' %}dt-badge-rejected
+                                        {% else %}dt-badge-pending{% endif %}">
+                                        {{ task.status }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="dt-empty">
+                                <div class="dt-empty-icon">
+                                    <i class="fas fa-clipboard"></i>
+                                </div>
+                                <p>No tasks submitted yet</p>
+                                <span>Add your first task using the form</span>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</section>
+
+
+
+            <!-- Daily Tasks Section
+            <section class="content-section" id="daily-tasks">
+
+                <div class="card">
+
+                    <h3>Daily Tasks</h3>
+
+                    <form method="POST" action="/add-task">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Project Name
+                            </label>
+
+                            <input type="text" name="project_name" class="form-control" placeholder="Enter Project Name"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Task Name
+                            </label>
+
+                            <input type="text" name="task_name" class="form-control" placeholder="Enter Task Name"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Time Period
+                            </label>
+
+                            <input type="text" name="time_period" class="form-control" placeholder="2 Days / 5 Hours">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+
+                            Submit Task
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </section> -->
 
             <!-- Weekly Rota Section -->
             <section class="content-section" id="weekly-rota">
@@ -570,7 +799,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Notifications Section -->
             <section class="content-section" id="notifications">
                 <div class="card">
@@ -609,40 +838,40 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script>
-    const attendanceData = {{ calendar_data | tojson }};
-    const showModal = {{ 'true' if show_modal else 'false' }};
-</script>
+        const attendanceData = {{ calendar_data | tojson }};
+        const showModal = {{ 'true' if show_modal else 'false' }};
+    </script>
 
     <!-- Custom JS file -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-   <!-- ADMIN POPUP -->
-<div id="adminPopup" class="admin-popup-overlay">
+    <!-- ADMIN POPUP -->
+    <div id="adminPopup" class="admin-popup-overlay">
 
-    <div class="admin-popup-box">
+        <div class="admin-popup-box">
 
-        <h4 class="admin-popup-title">You are an Admin</h4>
+            <h4 class="admin-popup-title">You are an Admin</h4>
 
-        <p class="admin-popup-text">
-            Select your dashboard:
-        </p>
+            <p class="admin-popup-text">
+                Select your dashboard:
+            </p>
 
-        <button onclick="goAdmin()" class="admin-btn admin-btn-red">
-            Admin
-        </button>
+            <button onclick="goAdmin()" class="admin-btn admin-btn-red">
+                Admin
+            </button>
 
-        <button onclick="closePopup()" class="admin-btn admin-btn-green">
-            User
-        </button>
+            <button onclick="closePopup()" class="admin-btn admin-btn-green">
+                User
+            </button>
 
+        </div>
     </div>
-</div>
 
-<!-- Profile Image Modal -->
-<div id="profileModal" class="profile-modal">
-    <span class="profile-close">&times;</span>
-    <img class="profile-modal-content" id="profileModalImg">
-</div>
+    <!-- Profile Image Modal -->
+    <div id="profileModal" class="profile-modal">
+        <span class="profile-close">&times;</span>
+        <img class="profile-modal-content" id="profileModalImg">
+    </div>
 
 </body>
 

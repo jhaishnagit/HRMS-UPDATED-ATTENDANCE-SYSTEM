@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect
+from flask import Blueprint, render_template, session, redirect, request
 from utils import get_db_connection
 import base64
 from datetime import datetime, timedelta
@@ -154,14 +154,26 @@ def dashboard():
     user_position = extra['position'] if extra else ''
     created_at = extra['created_at'] if extra else None
 
+    # DAILY TASK HISTORY
+    cursor.execute("""
+        SELECT *
+        FROM daily_tasks
+        WHERE employee_id = %s
+        ORDER BY created_at DESC
+    """, (session['user_id'],))
+    
+    tasks = cursor.fetchall()
+
     cursor.close()
     conn.close()
+
 
     # ✅ Read flag and immediately delete it — False on every refresh after first load
     show_modal = session.pop('show_admin_modal', False)
 
     return render_template(
         'dashboard.html',
+        tasks=tasks,
         show_modal=show_modal,
         user=user,
         created_at=created_at,
@@ -204,3 +216,45 @@ def check_admin():
         return {"is_admin": 1}
     else:
         return {"is_admin": 0}
+    
+
+@dashboard_bp.route('/add-task', methods=['POST'])
+def add_task():
+
+    project_name = request.form.get('project_name')
+
+    task_name = request.form.get('task_name')
+
+    time_period = request.form.get('time_period')
+
+    conn = get_db_connection()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        INSERT INTO daily_tasks
+        (
+            employee_id,
+            project_name,
+            task_name,
+            time_period
+        )
+
+        VALUES (%s, %s, %s, %s)
+
+    """, (
+
+        session['user_id'],
+        project_name,
+        task_name,
+        time_period
+
+    ))
+
+    conn.commit()
+    cursor.close()
+
+    conn.close()
+
+    return redirect('/dashboard')
