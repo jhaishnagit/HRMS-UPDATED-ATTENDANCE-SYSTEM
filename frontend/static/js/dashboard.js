@@ -12,52 +12,74 @@ document.addEventListener("DOMContentLoaded", function () {
     const navItems = document.querySelectorAll('.sidebar-nav li[data-section]');
     const sections = document.querySelectorAll('.content-section');
     const sidebar = document.getElementById('sidebar');
+    const sidebarLinks = document.querySelectorAll('.sidebar-nav li a');
     let stream = null;
 
-   // Mobile sidebar fix
-if (window.innerWidth < 992) {
+    // Mobile sidebar fix
+    if (window.innerWidth < 992) {
 
-    sidebar.classList.add('offcanvas', 'offcanvas-start');
+        
+        
 
-    const closeBtn = document.getElementById('close-btn');
+        const closeBtn = document.getElementById('close-btn');
 
-    if (closeBtn) {
-        closeBtn.classList.remove('d-none');
-    }
+        if (closeBtn) {
+            closeBtn.classList.remove('d-none');
+        }
 
-    // Auto close sidebar after clicking menu
-    document.querySelectorAll('.sidebar-nav li').forEach(item => {
-
-        item.addEventListener('click', () => {
+        // MOBILE CLOSE BUTTON FIX
+        closeBtn.addEventListener('click', () => {
 
             const bsOffcanvas =
-                bootstrap.Offcanvas.getInstance(sidebar);
+                bootstrap.Offcanvas.getOrCreateInstance(sidebar);
 
-            if (bsOffcanvas) {
-                bsOffcanvas.hide();
-            }
+            bsOffcanvas.hide();
+
         });
 
-    });
-}
+        // MOBILE SIDEBAR MENU FIX
+document.querySelectorAll('.sidebar-nav li a').forEach(link => {
 
-    // Navigation
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
+    link.addEventListener('click', function (e) {
+
+        const parentItem = this.closest('li');
+
+        const sectionId = parentItem?.getAttribute('data-section');
+
+        // HANDLE SECTION SWITCH
+        if (sectionId) {
+
             e.preventDefault();
-            const sectionId = item.getAttribute('data-section');
-            if (!sectionId) return;
+
             navItems.forEach(i => {
                 i.classList.remove('active');
                 i.querySelector('a')?.classList.remove('active');
             });
-            item.classList.add('active');
-            item.querySelector('a')?.classList.add('active');
+
+            parentItem.classList.add('active');
+            parentItem.querySelector('a')?.classList.add('active');
+
             sections.forEach(s => s.classList.remove('active'));
+
             document.getElementById(sectionId)?.classList.add('active');
-            if (window.innerWidth < 992) sidebar.classList.remove('show');
-        });
+        }
+
+        // CLOSE MOBILE SIDEBAR
+        if (window.innerWidth < 992) {
+
+            const bsOffcanvas =
+                bootstrap.Offcanvas.getOrCreateInstance(sidebar);
+
+            bsOffcanvas.hide();
+
+        }
+
     });
+
+});
+    }
+
+    
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIVENESS + FACE CAPTURE  (MediaPipe FaceMesh blink detection)
@@ -873,9 +895,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const el = (id) => document.getElementById(id);
-    if (el('dt-total-count'))    el('dt-total-count').textContent    = total;
+    if (el('dt-total-count')) el('dt-total-count').textContent = total;
     if (el('dt-approved-count')) el('dt-approved-count').textContent = approved;
-    if (el('dt-pending-count'))  el('dt-pending-count').textContent  = pending;
+    if (el('dt-pending-count')) el('dt-pending-count').textContent = pending;
     if (el('dt-rejected-count')) el('dt-rejected-count').textContent = rejected;
 
     // Filter tabs
