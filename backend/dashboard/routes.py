@@ -164,6 +164,19 @@ def dashboard():
     
     tasks = cursor.fetchall()
 
+
+
+    # LATEST UPCOMING HOLIDAY
+    cursor.execute("""
+        SELECT holiday_name, holiday_date
+        FROM holidays
+        WHERE holiday_date >= CURDATE()
+        ORDER BY holiday_date ASC
+        LIMIT 1
+    """)
+    
+    latest_holiday = cursor.fetchone()
+
     cursor.close()
     conn.close()
 
@@ -193,6 +206,7 @@ def dashboard():
         paid_leave_balance=paid_leave_balance,
         compensation_leaves=compensation_leaves,
         holiday_dates=holiday_dates,
+        latest_holiday=latest_holiday
     )
 
 
@@ -224,8 +238,12 @@ def add_task():
     project_name = request.form.get('project_name')
 
     task_name = request.form.get('task_name')
-
-    time_period = request.form.get('time_period')
+    
+    from_date = request.form.get('from_date')
+    
+    to_date = request.form.get('to_date')
+    
+    time_period = f"{from_date} To {to_date}"
 
     conn = get_db_connection()
 
@@ -257,4 +275,4 @@ def add_task():
 
     conn.close()
 
-    return redirect('/dashboard')
+    return redirect('/dashboard#daily-tasks')

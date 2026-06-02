@@ -1,674 +1,791 @@
-<!-- templates/admin.html (updated URLs for blueprint) -->
-<!-- templates/admin.html -->
-<!DOCTYPE html>
-<html lang="en">
+    <!-- templates/admin.html (updated URLs for blueprint) -->
+    <!-- templates/admin.html -->
+    <!DOCTYPE html>
+    <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - HRMS Attendance System</title>
-    <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard - HRMS Attendance System</title>
+        <link rel="icon" href="{{ url_for('static', filename='uploads/logo.jpeg') }}" type="image/png">
+        <!-- Bootstrap 5 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    </head>
 
-<body>
-    <div class="container-fluid">
-        <!-- Sidebar -->
-        <nav class="sidebar-pc" id="sidebar" data-bs-backdrop="false">
-            <div class="offcanvas-header">
-                <h2 class="offcanvas-title" id="sidebarLabel">Admin Dashboard</h2>
-                <button type="button" class="btn-close btn-close-white d-none" data-bs-dismiss="offcanvas"
-                    aria-label="Close" id="close-btn"></button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="profile-section">
-                    {% if admin_profile and admin_profile.face_image_base64 %}
-                    <div class="profile-circle">
-                        <img id="admin-profile-pic" src="data:image/jpeg;base64,{{ admin_profile.face_image_base64 }}"
-                            alt="Admin Profile">
+    <body>
+        <div class="container-fluid">
+            <!-- Sidebar -->
+            <nav class="sidebar-pc" id="sidebar" data-bs-backdrop="false">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title" id="sidebarLabel">Admin Dashboard</h2>
+                    <button type="button" class="btn-close btn-close-white d-none" data-bs-dismiss="offcanvas"
+                        aria-label="Close" id="close-btn"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="profile-section">
+                        {% if admin_profile and admin_profile.face_image_base64 %}
+                        <div class="profile-circle">
+                            <img id="admin-profile-pic" src="data:image/jpeg;base64,{{ admin_profile.face_image_base64 }}"
+                                alt="Admin Profile">
+                        </div>
+                        {% else %}
+                        <div class="profile-circle">
+                            <img id="admin-profile-pic" src="{{ url_for('static', filename='default_profile.jpg') }}"
+                                alt="Admin Profile">
+                        </div>
+                        {% endif %}
+                        <div class="profile-info">
+                            <p><strong>Admin:</strong> {{ admin_profile.username if admin_profile else 'Admin' }}</p>
+                            <p><strong>Email:</strong> <span id="admin-email-display">{{ admin_profile.email if
+                                    admin_profile else 'admin@example.com' }}</span></p>
+                            <input type="email" id="admin-email" value="{{ admin_profile.email if admin_profile else '' }}"
+                                placeholder="Email" style="display: none;">
+                            <input type="file" id="admin-new-face-image" accept="image/*" style="display: none;">
+                            <button id="admin-edit-profile-btn">Edit Profile</button>
+                            <button id="admin-save-profile-btn" style="display: none;">Save Changes</button>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="profile-circle">
-                        <img id="admin-profile-pic" src="{{ url_for('static', filename='default_profile.jpg') }}"
-                            alt="Admin Profile">
+                    <ul class="sidebar-nav">
+                        <li class="active" data-section="attendance"><a href="#" class="active"><i class="fas fa-clock"></i>
+                                <span class="sidebar-text">Attendance</span></a></li>
+                        <li data-section="users"><a href="#"><i class="fas fa-users"></i> <span class="sidebar-text">Manage
+                                    Users</span></a></li>
+                        <li data-section="tasks">
+                            <a href="#">
+                                <i class="fas fa-tasks"></i>
+                                <span class="sidebar-text">
+                                    Manage Tasks
+                                </span>
+                            </a>
+                        </li>
+                        <li data-section="rota"><a href="#"><i class="fas fa-calendar-week"></i> <span
+                                    class="sidebar-text">Upload Rota</span></a></li>
+                        <li data-section="holiday">
+                            <a href="#"><i class="fas fa-calendar-alt"></i><span class="sidebar-text">Upload
+                                    Holiday</span></a>
+                        </li>
+                        <li data-section="manage-leaves">
+                            <a href="#">
+                                <i class="fas fa-umbrella-beach"></i>
+                                <span class="sidebar-text">Manage Leaves</span>
+                            </a>
+                        </li>
+                        <li><a href="{{ url_for('auth.register') }}"><i class="fas fa-user"></i>New User</a></li>
+                        <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span
+                                    class="sidebar-text">Notifications</span></a></li>
+                        <li data-section="export">
+    <a href="{{ url_for('admin.export_page') }}"><i
+                                    class="fas fa-file-export"></i> <span class="sidebar-text">Export Data</span></a></li>
+                        <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> <span
+                                    class="sidebar-text">Logout</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="main-content">
+                <div class="header">
+                    <h1>Admin Panel</h1>
+                    <button class="toggle-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
+                        aria-controls="sidebar"><i class="fas fa-bars"></i></button>
+                </div>
+                <div class="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show"
+                        role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
+                    {% endfor %}
                     {% endif %}
-                    <div class="profile-info">
-                        <p><strong>Admin:</strong> {{ admin_profile.username if admin_profile else 'Admin' }}</p>
-                        <p><strong>Email:</strong> <span id="admin-email-display">{{ admin_profile.email if
-                                admin_profile else 'admin@example.com' }}</span></p>
-                        <input type="email" id="admin-email" value="{{ admin_profile.email if admin_profile else '' }}"
-                            placeholder="Email" style="display: none;">
-                        <input type="file" id="admin-new-face-image" accept="image/*" style="display: none;">
-                        <button id="admin-edit-profile-btn">Edit Profile</button>
-                        <button id="admin-save-profile-btn" style="display: none;">Save Changes</button>
-                    </div>
+                    {% endwith %}
                 </div>
-                <ul class="sidebar-nav">
-                    <li class="active" data-section="attendance"><a href="#" class="active"><i class="fas fa-clock"></i>
-                            <span class="sidebar-text">Attendance</span></a></li>
-                    <li data-section="users"><a href="#"><i class="fas fa-users"></i> <span class="sidebar-text">Manage
-                                Users</span></a></li>
-                    <li data-section="tasks">
-                        <a href="#">
-                            <i class="fas fa-tasks"></i>
-                            <span class="sidebar-text">
-                                Manage Tasks
-                            </span>
-                        </a>
-                    </li>
-                    <li data-section="rota"><a href="#"><i class="fas fa-calendar-week"></i> <span
-                                class="sidebar-text">Upload Rota</span></a></li>
-                    <li data-section="holiday">
-                        <a href="#"><i class="fas fa-calendar-alt"></i><span class="sidebar-text">Upload
-                                Holiday</span></a>
-                    </li>
-                    <li><a href="{{ url_for('admin.admin_leaves') }}"><i class="fas fa-umbrella-beach"></i> <span
-                                class="sidebar-text">Manage Leaves</span></a></li>
-                    <li><a href="{{ url_for('auth.register') }}"><i class="fas fa-user"></i>New User</a></li>
-                    <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span
-                                class="sidebar-text">Notifications</span></a></li>
-                    <li data-section="export"><a href="{{ url_for('admin.export_page') }}"><i
-                                class="fas fa-file-export"></i> <span class="sidebar-text">Export Data</span></a></li>
-                    <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> <span
-                                class="sidebar-text">Logout</span></a></li>
-                </ul>
-            </div>
-        </nav>
-        <main class="main-content">
-            <div class="header">
-                <h1>Admin Panel</h1>
-                <button class="toggle-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
-                    aria-controls="sidebar"><i class="fas fa-bars"></i></button>
-            </div>
-            <div class="flash-messages">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show"
-                    role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-                {% endif %}
-                {% endwith %}
-            </div>
 
-            <!-- Attendance Section -->
-            <section class="content-section active" id="attendance">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3>Attendance Overview</h3>
-                        <div class="view-selector">
-                            <select id="view-select" class="form-select">
-                                <option value="daily" {% if view=='daily' %}selected{% endif %}>Daily</option>
-                                <option value="weekly" {% if view=='weekly' %}selected{% endif %}>Weekly</option>
-                                <option value="monthly" {% if view=='monthly' %}selected{% endif %}>Monthly</option>
-                                <option value="yearly" {% if view=='yearly' %}selected{% endif %}>Yearly</option>
-                            </select>
+                <!-- Attendance Section -->
+                <section class="content-section active" id="attendance">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3>Attendance Overview</h3>
+                            <div class="view-selector">
+                                <select id="view-select" class="form-select">
+                                    <option value="daily" {% if view=='daily' %}selected{% endif %}>Daily</option>
+                                    <option value="weekly" {% if view=='weekly' %}selected{% endif %}>Weekly</option>
+                                    <option value="monthly" {% if view=='monthly' %}selected{% endif %}>Monthly</option>
+                                    <option value="yearly" {% if view=='yearly' %}selected{% endif %}>Yearly</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="search-bar mb-3">
-                            <input type="text" id="search-input" class="form-control"
-                                placeholder="Search by username..." value="{{ search_query }}">
-                            <button id="search-btn" class="btn btn-primary"><i class="fas fa-search"></i>
-                                Search</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-striped" id="attendance-table">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Position</th>
-                                        <th>Login Time</th>
-                                        <th>Logout Time</th>
-                                        <th>Hours Worked</th>
-                                        <th>Status</th>
-                                        <th>Daily Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for record in data %}
-                                    <tr>
-                                        <td>{{ record.username }}</td>
-                                        <td>{{ record.position }}</td>
-                                        <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time else
-                                            'N/A' }}</td>
-                                        <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if record.logout_time
-                                            else 'N/A' }}</td>
-                                        <td><span class="hours-worked" style="color: {{ record.color }};">{{
-                                                record.hours_worked }}</span></td>
-                                        <td>
-                                            <span
-                                                class="badge bg-{{ 'success' if record.attendance_status == 'Present' else 'danger' }}">{{
-                                                record.attendance_status }}</span>
-                                        </td>
-                                        <td>{{ 'Yes' if record.daily_status_submitted else 'No' }}</td>
-                                        <td>
-                                            <select class="status-select form-select form-select-sm"
-                                                data-id="{{ record.attendance_id }}">
-                                                <option value="Present" {% if record.attendance_status=='Present'
-                                                    %}selected{% endif %}>Present</option>
-                                                <option value="Absent" {% if record.attendance_status=='Absent'
-                                                    %}selected{% endif %}>Absent</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="all-attendance-section" style="display: none;">
-                            <h5>All Attendance Records</h5>
+                        <div class="card-body">
+                            <div class="search-bar mb-3">
+                                <input type="text" id="search-input" class="form-control"
+                                    placeholder="Search by username..." value="{{ search_query }}">
+                                <button id="search-btn" class="btn btn-primary"><i class="fas fa-search"></i>
+                                    Search</button>
+                            </div>
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped" id="attendance-table">
                                     <thead>
                                         <tr>
                                             <th>Username</th>
+                                            <th>Position</th>
                                             <th>Login Time</th>
                                             <th>Logout Time</th>
                                             <th>Hours Worked</th>
                                             <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for record in all_attendance %}
-                                        <tr>
-                                            <td>{{ record.username }}</td>
-                                            <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time
-                                                else 'N/A' }}</td>
-                                            <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if
-                                                record.logout_time else 'N/A' }}</td>
-                                            <td><span class="hours-worked" style="color: {{ record.color }};">{{
-                                                    record.hours_worked }}</span></td>
-                                            <td><span
-                                                    class="badge bg-{{ 'success' if record.attendance_status == 'Present' else 'danger' }}">{{
-                                                    record.attendance_status }}</span></td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-
-            <!-- Manage Tasks Section -->
-            <!-- <section class="content-section" id="tasks">
-
-                    <div class="card">
-
-                        <h3>Employee Tasks</h3>
-
-                        <div class="table-responsive">
-
-                            <table class="table table-striped">
-
-                                <thead>
-
-                                    <tr>
-
-                                        <th>Employee ID</th>
-
-                                        <th>Project</th>
-
-                                        <th>Task</th>
-
-                                        <th>Time</th>
-
-                                        <th>Status</th>
-
-                                        <th>Action</th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    {% for task in tasks %}
-
-                                    <tr>
-
-                                        <td>{{ task.employee_id }}</td>
-
-                                        <td>{{ task.project_name }}</td>
-
-                                        <td>{{ task.task_name }}</td>
-
-                                        <td>{{ task.time_period }}</td>
-
-                                        <td>{{ task.status }}</td>
-
-                                        <td>
-
-                                            <a href="/admin/approve-task/{{ task.id }}" class="btn btn-success btn-sm">
-
-                                                Approve
-
-                                            </a>
-
-                                            <a href="/admin/reject-task/{{ task.id }}" class="btn btn-danger btn-sm">
-
-                                                Reject
-
-                                            </a>
-
-                                        </td>
-
-                                    </tr>
-
-                                    {% endfor %}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
-                </section> -->
-
-            <!-- ============================================================
-        ADMIN TASKS SECTION — Replace existing #tasks section
-        in frontend/templates/admin.html
-        ============================================================ -->
-            <section class="content-section" id="tasks">
-                <div class="card">
-                    <div class="admin-tasks-wrapper">
-
-                        <!-- Header + Stats -->
-                        <div class="admin-tasks-header">
-                            <div class="admin-tasks-title">
-                                <i class="fas fa-tasks"></i>
-                                <span>Employee Task Management</span>
-                            </div>
-                            <div class="admin-task-stats">
-                                <div class="admin-task-stat">
-                                    <span class="admin-task-stat-val">{{ tasks | length }}</span>
-                                    <span class="admin-task-stat-label">Total</span>
-                                </div>
-                                <div class="admin-task-stat at-approved">
-                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
-                                        'Approved') | list | length }}</span>
-                                    <span class="admin-task-stat-label">Approved</span>
-                                </div>
-                                <div class="admin-task-stat at-pending">
-                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
-                                        'Pending') | list | length }}</span>
-                                    <span class="admin-task-stat-label">Pending</span>
-                                </div>
-                                <div class="admin-task-stat at-rejected">
-                                    <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
-                                        'Rejected') | list | length }}</span>
-                                    <span class="admin-task-stat-label">Rejected</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- SEARCH + FILTER -->
-<div class="admin-task-filters">
-
-    <!-- Search -->
-    <div class="task-search-box">
-        <i class="fas fa-search"></i>
-
-        <input
-            type="text"
-            id="taskSearch"
-            placeholder="Search employee, project, task..."
-        >
-    </div>
-
-    <!-- Project Filter -->
-    <div class="task-filter-box">
-        <i class="fas fa-folder"></i>
-
-        <select id="projectFilter">
-            <option value="all">All Projects</option>
-
-            {% for task in tasks %}
-            <option value="{{ task.project_name }}">
-                {{ task.project_name }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-</div>
-
-                        <!-- Table -->
-                        <div class="admin-tasks-table-wrap">
-                            <div class="table-responsive">
-                                <table class="admin-tasks-table">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Employee</th>
-                                            <th>Project</th>
-                                            <th>Task</th>
-                                            <th>Time Period</th>
-                                            <th>Submitted</th>
-                                            <th>Status</th>
+                                            <th>Daily Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% if tasks %}
-                                        {% for task in tasks %}
+                                        {% for record in data %}
                                         <tr>
-                                            <td style="color:#9ca3af;font-size:0.78rem;font-weight:600;">
-                                                #{{ loop.index }}
-                                            </td>
+                                            <td>{{ record.username }}</td>
+                                            <td>{{ record.position }}</td>
+                                            <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time else
+                                                'N/A' }}</td>
+                                            <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if record.logout_time
+                                                else 'N/A' }}</td>
+                                            <td><span class="hours-worked" style="color: {{ record.color }};">{{
+                                                    record.hours_worked }}</span></td>
                                             <td>
-
-
-                                                <div>
-                                                    <div class="at-emp-name">
-                                                        {{ task.employee_name }}
-                                                    </div>
-
-                                                    <div class="at-emp-id">
-                                                        Employee ID: {{ task.employee_id }}
-                                                    </div>
-                                                </div>
+                                                <span
+                                                    class="badge bg-{{ 'success' if record.attendance_status == 'Present' else 'danger' }}">{{
+                                                    record.attendance_status }}</span>
                                             </td>
+                                            <td>{{ 'Yes' if record.daily_status_submitted else 'No' }}</td>
                                             <td>
-                                                <span class="at-project-tag">
-                                                    <i class="fas fa-folder"></i> {{ task.project_name }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="at-task-name" title="{{ task.task_name }}">
-                                                    {{ task.task_name }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="at-time-chip">
-                                                    <i class="fas fa-hourglass-half"></i>
-                                                    {{ task.time_period or 'N/A' }}
-                                                </span>
-                                            </td>
-                                            <td style="color:#6b7280;font-size:0.78rem;">
-                                                {% if task.created_at %}
-                                                {{ task.created_at.strftime('%d %b %Y') }}
-                                                {% else %}
-                                                —
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <span class="at-badge
-                                                {% if task.status == 'Approved' %}at-badge-approved
-                                                {% elif task.status == 'Rejected' %}at-badge-rejected
-                                                {% else %}at-badge-pending{% endif %}">
-                                                    {{ task.status }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {% if task.status == 'Pending' %}
-                                                <div class="at-action-btns">
-                                                    <a href="/admin/approve-task/{{ task.id }}" class="at-btn-approve"
-                                                        onclick="return confirm('Approve this task?')">
-                                                        <i class="fas fa-check"></i> Approve
-                                                    </a>
-                                                    <a href="/admin/reject-task/{{ task.id }}" class="at-btn-reject"
-                                                        onclick="return confirm('Reject this task? The employee will be marked Absent and an email will be sent.')">
-                                                        <i class="fas fa-times"></i> Reject
-                                                    </a>
-                                                </div>
-                                                {% else %}
-                                                <span class="at-done-text">
-                                                    {% if task.status == 'Approved' %}
-                                                    <i class="fas fa-check-circle" style="color:#059669;"></i> Done
-                                                    {% else %}
-                                                    <i class="fas fa-times-circle" style="color:#dc2626;"></i> Done
-                                                    {% endif %}
-                                                </span>
-                                                {% endif %}
+                                                <select class="status-select form-select form-select-sm"
+                                                    data-id="{{ record.attendance_id }}">
+                                                    <option value="Present" {% if record.attendance_status=='Present'
+                                                        %}selected{% endif %}>Present</option>
+                                                    <option value="Absent" {% if record.attendance_status=='Absent'
+                                                        %}selected{% endif %}>Absent</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         {% endfor %}
-                                        {% else %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="all-attendance-section" style="display: none;">
+                                <h5>All Attendance Records</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Login Time</th>
+                                                <th>Logout Time</th>
+                                                <th>Hours Worked</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for record in all_attendance %}
+                                            <tr>
+                                                <td>{{ record.username }}</td>
+                                                <td>{{ record.login_time|strftime('%Y-%m-%d %H:%M:%S') if record.login_time
+                                                    else 'N/A' }}</td>
+                                                <td>{{ record.logout_time|strftime('%Y-%m-%d %H:%M:%S') if
+                                                    record.logout_time else 'N/A' }}</td>
+                                                <td><span class="hours-worked" style="color: {{ record.color }};">{{
+                                                        record.hours_worked }}</span></td>
+                                                <td><span
+                                                        class="badge bg-{{ 'success' if record.attendance_status == 'Present' else 'danger' }}">{{
+                                                        record.attendance_status }}</span></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================
+            ADMIN TASKS SECTION — Replace existing #tasks section
+            in frontend/templates/admin.html
+            ============================================================ -->
+                <section class="content-section" id="tasks">
+                    <div class="card">
+                        <div class="admin-tasks-wrapper">
+
+                            <!-- Header + Stats -->
+                            <div class="admin-tasks-header">
+                                <div class="admin-tasks-title">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>Employee Task Management</span>
+                                </div>
+                                <div class="admin-task-stats">
+                                    <div class="admin-task-stat">
+                                        <span class="admin-task-stat-val">{{ tasks | length }}</span>
+                                        <span class="admin-task-stat-label">Total</span>
+                                    </div>
+                                    <div class="admin-task-stat at-approved">
+                                        <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                            'Approved') | list | length }}</span>
+                                        <span class="admin-task-stat-label">Approved</span>
+                                    </div>
+                                    <div class="admin-task-stat at-pending">
+                                        <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                            'Pending') | list | length }}</span>
+                                        <span class="admin-task-stat-label">Pending</span>
+                                    </div>
+                                    <div class="admin-task-stat at-rejected">
+                                        <span class="admin-task-stat-val">{{ tasks | selectattr('status', 'equalto',
+                                            'Rejected') | list | length }}</span>
+                                        <span class="admin-task-stat-label">Rejected</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- SEARCH + FILTER -->
+                            <div class="admin-task-filters">
+
+                                <!-- Search -->
+                                <div class="task-search-box">
+                                    <i class="fas fa-search"></i>
+
+                                    <input type="text" id="taskSearch" placeholder="Search employee, project, task...">
+                                </div>
+
+                                <!-- Project Filter -->
+                                <div class="task-filter-box">
+                                    <i class="fas fa-folder"></i>
+
+                                    <select id="projectFilter">
+                                        <option value="all">All Projects</option>
+
+                                        {% for task in tasks %}
+                                        <option value="{{ task.project_name }}">
+                                            {{ task.project_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <!-- Table -->
+                            <div class="admin-tasks-table-wrap">
+                                <div class="table-responsive">
+                                    <table class="admin-tasks-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Employee</th>
+                                                <th>Project</th>
+                                                <th>Task</th>
+                                                <th>Time Period</th>
+                                                <th>Submitted</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if tasks %}
+                                            {% for task in tasks %}
+                                            <tr>
+                                                <td style="color:#9ca3af;font-size:0.78rem;font-weight:600;">
+                                                    #{{ loop.index }}
+                                                </td>
+                                                <td>
+
+
+                                                    <div>
+                                                        <div class="at-emp-name">
+                                                            {{ task.employee_name }}
+                                                        </div>
+
+                                                        <div class="at-emp-id">
+                                                            Employee ID: {{ task.employee_id }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="at-project-tag">
+                                                        <i class="fas fa-folder"></i> {{ task.project_name }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="at-task-name" title="{{ task.task_name }}">
+                                                        {{ task.task_name }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="at-time-chip">
+                                                        <i class="fas fa-hourglass-half"></i>
+                                                        {{ task.time_period or 'N/A' }}
+                                                    </span>
+                                                </td>
+                                                <td style="color:#6b7280;font-size:0.78rem;">
+                                                    {% if task.created_at %}
+                                                    {{ task.created_at.strftime('%d %b %Y') }}
+                                                    {% else %}
+                                                    —
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="at-badge
+                                                    {% if task.status == 'Approved' %}at-badge-approved
+                                                    {% elif task.status == 'Rejected' %}at-badge-rejected
+                                                    {% else %}at-badge-pending{% endif %}">
+                                                        {{ task.status }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if task.status == 'Pending' %}
+                                                    <div class="at-action-btns">
+                                                        <a href="/admin/approve-task/{{ task.id }}" class="at-btn-approve"
+                                                            onclick="return confirm('Approve this task?')">
+                                                            <i class="fas fa-check"></i> Approve
+                                                        </a>
+                                                        <a href="/admin/reject-task/{{ task.id }}" class="at-btn-reject"
+                                                            onclick="return confirm('Reject this task? The employee will be marked Absent and an email will be sent.')">
+                                                            <i class="fas fa-times"></i> Reject
+                                                        </a>
+                                                    </div>
+                                                    {% else %}
+                                                    <span class="at-done-text">
+                                                        {% if task.status == 'Approved' %}
+                                                        <i class="fas fa-check-circle" style="color:#059669;"></i> Done
+                                                        {% else %}
+                                                        <i class="fas fa-times-circle" style="color:#dc2626;"></i> Done
+                                                        {% endif %}
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="8">
+                                                    <div class="at-empty">
+                                                        <i class="fas fa-clipboard-list"></i>
+                                                        <p style="font-weight:700;color:#6b7280;margin:0 0 4px;">No tasks
+                                                            submitted yet</p>
+                                                        <span style="font-size:0.82rem;">Employee tasks will appear
+                                                            here</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Manage Users Section -->
+                <section class="content-section" id="users">
+                    <div class="card">
+                        <h3 class="card-header">Manage Users</h3>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="users-table">
+                                    <thead>
                                         <tr>
-                                            <td colspan="8">
-                                                <div class="at-empty">
-                                                    <i class="fas fa-clipboard-list"></i>
-                                                    <p style="font-weight:700;color:#6b7280;margin:0 0 4px;">No tasks
-                                                        submitted yet</p>
-                                                    <span style="font-size:0.82rem;">Employee tasks will appear
-                                                        here</span>
-                                                </div>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Email</th>
+                                            <th>Position</th>
+                                            <th>Profile Image</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr data-user-id="{{ user.id }}">
+                                            <td>{{ user.id }}</td>
+                                            <td contenteditable="false">{{ user.username }}</td>
+                                            <td contenteditable="false">{{ user.email }}</td>
+                                            <td contenteditable="false">{{ user.position }}</td>
+                                            <td>
+                                                {% if user.face_image_base64 %}
+                                                <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="Profile"
+                                                    class="user-profile-img"
+                                                    style="width: 50px; height: 50px; border-radius: 50%;">
+                                                {% else %}
+                                                <span>No Image</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary edit-user-btn"
+                                                    data-id="{{ user.id }}">Edit</button>
+
+                                                <button class="btn btn-sm btn-danger delete-user-btn"
+                                                    data-id="{{ user.id }}">Delete</button>
+
+                                                <input type="file" class="new-user-image" accept="image/*"
+                                                    style="display: none;" data-id="{{ user.id }}">
                                             </td>
                                         </tr>
-                                        {% endif %}
+                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Manage Users Section -->
-            <section class="content-section" id="users">
-                <div class="card">
-                    <h3 class="card-header">Manage Users</h3>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped" id="users-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Position</th>
-                                        <th>Profile Image</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in users %}
-                                    <tr data-user-id="{{ user.id }}">
-                                        <td>{{ user.id }}</td>
-                                        <td contenteditable="false">{{ user.username }}</td>
-                                        <td contenteditable="false">{{ user.email }}</td>
-                                        <td contenteditable="false">{{ user.position }}</td>
-                                        <td>
-                                            {% if user.face_image_base64 %}
-                                            <img src="data:image/jpeg;base64,{{ user.face_image_base64 }}" alt="Profile"
-                                                class="user-profile-img"
-                                                style="width: 50px; height: 50px; border-radius: 50%;">
-                                            {% else %}
-                                            <span>No Image</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary edit-user-btn"
-                                                data-id="{{ user.id }}">Edit</button>
-
-                                            <button class="btn btn-sm btn-danger delete-user-btn"
-                                                data-id="{{ user.id }}">Delete</button>
-
-                                            <input type="file" class="new-user-image" accept="image/*"
-                                                style="display: none;" data-id="{{ user.id }}">
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                <!-- Upload Rota Section -->
+                <section class="content-section" id="rota">
+                    <div class="card">
+                        <h3 class="card-header">Upload Weekly Rota</h3>
+                        <div class="card-body">
+                            <form id="upload-rota-form">
+                                <input type="file" id="rota-image" accept="image/*" class="form-control mb-3" required>
+                                <button type="submit" class="btn btn-primary">Upload Rota</button>
+                            </form>
+                            {% if rota_image_base64 %}
+                            <div class="mt-3">
+                                <h5>Current Rota</h5>
+                                <img src="data:image/jpeg;base64,{{ rota_image_base64 }}" alt="Current Rota"
+                                    class="rota-image">
+                            </div>
+                            {% else %}
+                            <p class="mt-3">No rota uploaded yet.</p>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Upload Rota Section -->
-            <section class="content-section" id="rota">
-                <div class="card">
-                    <h3 class="card-header">Upload Weekly Rota</h3>
-                    <div class="card-body">
-                        <form id="upload-rota-form">
-                            <input type="file" id="rota-image" accept="image/*" class="form-control mb-3" required>
-                            <button type="submit" class="btn btn-primary">Upload Rota</button>
-                        </form>
-                        {% if rota_image_base64 %}
-                        <div class="mt-3">
-                            <h5>Current Rota</h5>
-                            <img src="data:image/jpeg;base64,{{ rota_image_base64 }}" alt="Current Rota"
-                                class="rota-image">
-                        </div>
-                        {% else %}
-                        <p class="mt-3">No rota uploaded yet.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </section>
+                <!-- Upload Holiday Section -->
+                <!-- Upload Holiday Section — REPLACE the existing holiday section in admin.html -->
+                <section class="content-section" id="holiday">
+                    <div class="card">
+                        <h3 class="card-header">Upload Holiday List</h3>
+                        <div class="card-body">
 
-            <!-- Upload Holiday Section -->
-            <!-- Upload Holiday Section — REPLACE the existing holiday section in admin.html -->
-            <section class="content-section" id="holiday">
-                <div class="card">
-                    <h3 class="card-header">Upload Holiday List</h3>
-                    <div class="card-body">
+                            <form id="upload-holiday-form">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-file-excel me-1" style="color:#217346;"></i>
+                                        Select Excel / CSV File
+                                    </label>
+                                    <!-- ✅ Accept spreadsheet formats, NOT image/* -->
+                                    <input type="file" id="holiday-image" accept=".xls,.xlsx,.csv" class="form-control"
+                                        required>
+                                    <div class="form-text text-muted">
+                                        Supported formats: <strong>.xls, .xlsx, .csv</strong>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload me-1"></i> Upload Holiday List
+                                </button>
+                            </form>
 
-                        <form id="upload-holiday-form">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    <i class="fas fa-file-excel me-1" style="color:#217346;"></i>
-                                    Select Excel / CSV File
-                                </label>
-                                <!-- ✅ Accept spreadsheet formats, NOT image/* -->
-                                <input type="file" id="holiday-image" accept=".xls,.xlsx,.csv" class="form-control"
-                                    required>
-                                <div class="form-text text-muted">
-                                    Supported formats: <strong>.xls, .xlsx, .csv</strong>
+                            <!-- Preview of already-uploaded table -->
+                            {% if holiday_table %}
+                            <div class="mt-4">
+                                <h5><i class="fas fa-calendar-check me-2 text-success"></i>Current Holiday List</h5>
+                                <div class="table-responsive holiday-preview-wrap">
+                                    {{ holiday_table | safe }}
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-upload me-1"></i> Upload Holiday List
-                            </button>
-                        </form>
+                            {% else %}
+                            <p class="mt-3 text-muted">No holiday list uploaded yet.</p>
+                            {% endif %}
 
-                        <!-- Preview of already-uploaded table -->
-                        {% if holiday_table %}
-                        <div class="mt-4">
-                            <h5><i class="fas fa-calendar-check me-2 text-success"></i>Current Holiday List</h5>
-                            <div class="table-responsive holiday-preview-wrap">
-                                {{ holiday_table | safe }}
-                            </div>
                         </div>
-                        {% else %}
-                        <p class="mt-3 text-muted">No holiday list uploaded yet.</p>
-                        {% endif %}
+                    </div>
+                </section>
 
+                <!-- Manage Leaves Section -->
+    <section class="content-section" id="manage-leaves">
+
+        <div class="lv-body">
+
+            <!-- STATS -->
+            <div class="stats-row">
+
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+
+                    <div class="stat-label">
+                        TOTAL REQUESTS
+                    </div>
+
+                    <div class="stat-value">
+                        {{ leaves|length }}
                     </div>
                 </div>
-            </section>
-            <!-- Notifications Section -->
-            <section class="content-section" id="notifications">
-                <div class="card">
-                    <h3 class="card-header">Send Notification</h3>
-                    <div class="card-body">
-                        <form id="send-notification-form">
-                            <textarea id="notification-message" class="form-control mb-3"
-                                placeholder="Enter notification message..." required></textarea>
-                            <button type="submit" class="btn btn-primary">Send to All Users</button>
-                        </form>
+
+                <div class="stat-card pending">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+
+                    <div class="stat-label">
+                        PENDING
+                    </div>
+
+                    <div class="stat-value">
+                        {{ leaves | selectattr('status','equalto','Pending') | list | length }}
                     </div>
                 </div>
-                <div class="card mt-4">
-                    <h3 class="card-header">Read Notifications</h3>
-                    <div class="card-body">
-                        {% if read_notifications %}
-                        <ul class="list-group">
-                            {% for notif in read_notifications %}
-                            <li class="list-group-item">{{ notif.message }} - Sent to {{ notif.username }} on {{
-                                notif.created_at|strftime('%Y-%m-%d %H:%M:%S') }} (Read: {{
-                                notif.read_at|strftime('%Y-%m-%d %H:%M:%S') if notif.read_at else 'N/A' }})</li>
+
+                <div class="stat-card approved">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+
+                    <div class="stat-label">
+                        APPROVED
+                    </div>
+
+                    <div class="stat-value">
+                        {{ leaves | selectattr('status','equalto','Approved') | list | length }}
+                    </div>
+                </div>
+
+                <div class="stat-card rejected">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+
+                    <div class="stat-label">
+                        REJECTED
+                    </div>
+
+                    <div class="stat-value">
+                        {{ leaves | selectattr('status','equalto','Rejected') | list | length }}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-card">
+
+                <div class="table-responsive">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>#</th>
+                                <th>Employee</th>
+                                <th>Leave Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Days</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for leave in leaves %}
+
+                            <tr>
+
+                                <td>{{ loop.index }}</td>
+
+                                <td>
+
+                                    <div style="display:flex;align-items:center;">
+
+                                        <div class="avatar">
+                                            {{ leave.username[0] }}
+                                        </div>
+
+                                        <div>
+                                            <div class="emp-name">
+                                                {{ leave.username }}
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <span class="lt-pill lt-paid">
+                                        {{ leave.leave_type }}
+                                    </span>
+
+                                </td>
+
+                                <td>{{ leave.start_date }}</td>
+
+                                <td>{{ leave.end_date }}</td>
+
+                                <td class="val-days">
+                                    {{ leave.total_days }}
+                                </td>
+
+                                <td>
+
+                                    {% if leave.status == 'Approved' %}
+
+                                    <span class="badge-status badge-approved">
+                                        Approved
+                                    </span>
+
+                                    {% elif leave.status == 'Rejected' %}
+
+                                    <span class="badge-status badge-rejected">
+                                        Rejected
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge-status badge-pending">
+                                        Pending
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td class="actions-cell">
+
+                                    {% if leave.status == 'Pending' %}
+
+                                    <button class="btn-approve">
+                                        <i class="fas fa-check"></i>
+                                        Approve
+                                    </button>
+
+                                    <button class="btn-reject">
+                                        <i class="fas fa-times"></i>
+                                        Reject
+                                    </button>
+
+                                    {% else %}
+
+                                    <span class="no-action-text">
+                                        Completed
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
                             {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p>No read notifications.</p>
-                        {% endif %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+                <!-- Notifications Section -->
+                <section class="content-section" id="notifications">
+                    <div class="card">
+                        <h3 class="card-header">Send Notification</h3>
+                        <div class="card-body">
+                            <form id="send-notification-form">
+                                <textarea id="notification-message" class="form-control mb-3"
+                                    placeholder="Enter notification message..." required></textarea>
+                                <button type="submit" class="btn btn-primary">Send to All Users</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            </section>
+                    <div class="card mt-4">
+                        <h3 class="card-header">Read Notifications</h3>
+                        <div class="card-body">
+                            {% if read_notifications %}
+                            <ul class="list-group">
+                                {% for notif in read_notifications %}
+                                <li class="list-group-item">{{ notif.message }} - Sent to {{ notif.username }} on {{
+                                    notif.created_at|strftime('%Y-%m-%d %H:%M:%S') }} (Read: {{
+                                    notif.read_at|strftime('%Y-%m-%d %H:%M:%S') if notif.read_at else 'N/A' }})</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p>No read notifications.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
 
-            <!-- Export Section (Redirects to separate page) -->
-            <section class="content-section" id="export">
-                <div class="card">
-                    <h3>Export Attendance Data</h3>
-                    <p>Redirecting to export page...</p>
-                </div>
-            </section>
-        </main>
-    </div>
+                <!-- Export Section (Redirects to separate page) -->
+                <section class="content-section" id="export">
+                    <div class="card">
+                        <h3>Export Attendance Data</h3>
+                        <p>Redirecting to export page...</p>
+                    </div>
+                </section>
+            </main>
+        </div>
 
-    <!-- Edit User Modal -->
-    <div class="modal fade" id="editUserModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-user-form">
-                        <input type="hidden" id="edit-user-id">
-                        <div class="mb-3">
-                            <label>Username</label>
-                            <input type="text" id="edit-username" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email" id="edit-email" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label>Position</label>
-                            <input type="text" id="edit-position" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label>New Profile Image</label>
-                            <input type="file" id="edit-face-image" class="form-control" accept="image/*">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="save-user-btn">Save Changes</button>
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-user-form">
+                            <input type="hidden" id="edit-user-id">
+                            <div class="mb-3">
+                                <label>Username</label>
+                                <input type="text" id="edit-username" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label>Email</label>
+                                <input type="email" id="edit-email" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label>Position</label>
+                                <input type="text" id="edit-position" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label>New Profile Image</label>
+                                <input type="file" id="edit-face-image" class="form-control" accept="image/*">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="save-user-btn">Save Changes</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-        crossorigin="anonymous"></script>
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+        <!-- Bootstrap 5 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 
-    <!-- ADMIN PROFILE IMAGE MODAL -->
-    <div id="adminProfileModal" class="profile-modal">
-        <span class="profile-close">&times;</span>
-        <img class="profile-modal-content" id="adminProfileModalImg">
-    </div>
-    <!-- USER PROFILE IMAGE MODAL -->
-    <div id="userProfileModal" class="profile-modal">
-        <span class="profile-close">&times;</span>
-        <img class="profile-modal-content" id="userProfileModalImg">
-    </div>
-</body>
+        <!-- ADMIN PROFILE IMAGE MODAL -->
+        <div id="adminProfileModal" class="profile-modal">
+            <span class="profile-close">&times;</span>
+            <img class="profile-modal-content" id="adminProfileModalImg">
+        </div>
+        <!-- USER PROFILE IMAGE MODAL -->
+        <div id="userProfileModal" class="profile-modal">
+            <span class="profile-close">&times;</span>
+            <img class="profile-modal-content" id="userProfileModalImg">
+        </div>
+    </body>
 
-</html>
+    </html>

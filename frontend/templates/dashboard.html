@@ -26,9 +26,7 @@
 <body>
     <div class="container-fluid">
         <!-- Sidebar (Fixed for PC, Offcanvas for mobile) -->
-        <nav class="sidebar-pc offcanvas offcanvas-start"
-     id="sidebar"
-     tabindex="-1">
+        <nav class="sidebar-pc offcanvas offcanvas-start" id="sidebar" tabindex="-1">
             <div class="offcanvas-header">
                 <h2 class="offcanvas-title" id="sidebarLabel">User Dashboard</h2>
                 <button type="button" class="btn-close btn-close-white d-none" data-bs-dismiss="offcanvas"
@@ -115,6 +113,19 @@
             <section class="content-section active" id="attendance">
                 <div class="card">
                     <h3>Attendance</h3>
+
+                    {% if latest_holiday %}
+                    <div class="holiday-marquee-container">
+                        <marquee behavior="scroll" direction="left" scrollamount="6">
+
+                            🎉 Upcoming Holiday :
+                            <strong>{{ latest_holiday.holiday_name }}</strong>
+                            -
+                            {{ latest_holiday.holiday_date.strftime('%d %B %Y') }}
+
+                        </marquee>
+                    </div>
+                    {% endif %}
                     <p><strong>Last Login:</strong> {{ last_login|strftime('%Y-%m-%d %H:%M:%S') if last_login else 'N/A'
                         }}</p>
                     <p><strong>Last Logout:</strong> {{ last_logout|strftime('%Y-%m-%d %H:%M:%S') if last_logout else
@@ -155,8 +166,9 @@
                         <!-- ══ STEP 2: DAILY STATUS ══════════════════════════════════ -->
                         {% elif last_login and not daily_status_submitted %}
 
-                        <textarea id="daily-status" class="form-control mb-2" rows="4"
-                            placeholder="Enter your daily status report…"></textarea>
+                        <textarea id="daily-status" class="form-control mb-2 daily-status-input" rows="4"
+                            placeholder="Enter your daily status report..." required
+                            oninput="this.value=this.value.replace(/[^A-Za-z .,]/g,'')"></textarea>
                         <button id="submit-status-btn" class="btn btn-primary" type="button">
                             &#9992; Submit Daily Status
                         </button>
@@ -230,175 +242,211 @@
 
 
 
-    <!-- ============================================================
+            <!-- ============================================================
      DAILY TASKS SECTION — Replace existing #daily-tasks section
      in frontend/templates/dashboard.html
      ============================================================ -->
-<section class="content-section" id="daily-tasks">
+            <section class="content-section" id="daily-tasks">
 
-    <div class="dt-wrapper">
+                <div class="dt-wrapper">
 
-        <!-- ── Page Header ── -->
-        <div class="dt-page-header">
-            <div class="dt-page-title">
-                <div class="dt-title-icon"><i class="fas fa-tasks"></i></div>
-                <div>
-                    <h2>Daily Tasks</h2>
-                    <p>Log your work and track progress</p>
-                </div>
-            </div>
-            <div class="dt-stats-mini">
-                <div class="dt-mini-stat">
-                    <span class="dt-mini-val" id="dt-total-count">0</span>
-                    <span class="dt-mini-label">Total</span>
-                </div>
-                <div class="dt-mini-stat approved">
-                    <span class="dt-mini-val" id="dt-approved-count">0</span>
-                    <span class="dt-mini-label">Approved</span>
-                </div>
-                <div class="dt-mini-stat pending">
-                    <span class="dt-mini-val" id="dt-pending-count">0</span>
-                    <span class="dt-mini-label">Pending</span>
-                </div>
-                <div class="dt-mini-stat rejected">
-                    <span class="dt-mini-val" id="dt-rejected-count">0</span>
-                    <span class="dt-mini-label">Rejected</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Main Grid ── -->
-        <div class="dt-grid">
-
-            <!-- LEFT: Submit Form -->
-            <div class="dt-form-col">
-                <div class="dt-form-card">
-                    <div class="dt-form-header">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>Add New Task</span>
-                    </div>
-
-                    <form method="POST" action="/add-task" id="dt-add-form">
-
-                        <div class="dt-field">
-                            <label class="dt-label">
-                                <i class="fas fa-folder"></i> Project Name
-                            </label>
-                            <input type="text" name="project_name" class="dt-input"
-                                placeholder="e.g. HRMS Portal" required autocomplete="off">
+                    <!-- ── Page Header ── -->
+                    <div class="dt-page-header">
+                        <div class="dt-page-title">
+                            <div class="dt-title-icon"><i class="fas fa-tasks"></i></div>
+                            <div>
+                                <h2>Daily Tasks</h2>
+                                <p>Log your work and track progress</p>
+                            </div>
                         </div>
-
-                        <div class="dt-field">
-                            <label class="dt-label">
-                                <i class="fas fa-clipboard-list"></i> Task Name
-                            </label>
-                            <input type="text" name="task_name" class="dt-input"
-                                placeholder="e.g. Fix login bug" required autocomplete="off">
-                        </div>
-
-                        <div class="dt-field">
-                            <label class="dt-label">
-                                <i class="fas fa-hourglass-half"></i> Time Period
-                            </label>
-                            <input type="text" name="time_period" class="dt-input"
-                                placeholder="e.g. 2 Hours / 1 Day" autocomplete="off">
-                            <span class="dt-hint">This will be used for attendance tracking if rejected</span>
-                        </div>
-
-                        <button type="submit" class="dt-submit-btn">
-                            <i class="fas fa-paper-plane"></i>
-                            Submit Task
-                        </button>
-
-                    </form>
-                </div>
-
-                <!-- Info Card -->
-                <div class="dt-info-card">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>Note:</strong> If your task is rejected by admin, the time period
-                        you mentioned will be marked as <strong>Absent</strong> and you'll receive
-                        an email notification.
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT: Task History -->
-            <div class="dt-history-col">
-                <div class="dt-history-card">
-                    <div class="dt-history-header">
-                        <h5><i class="fas fa-history"></i> Task History</h5>
-                        <div class="dt-filter-tabs">
-                            <button class="dt-filter-btn active" data-filter="all">All</button>
-                            <button class="dt-filter-btn" data-filter="Pending">Pending</button>
-                            <button class="dt-filter-btn" data-filter="Approved">Approved</button>
-                            <button class="dt-filter-btn" data-filter="Rejected">Rejected</button>
+                        <div class="dt-stats-mini">
+                            <div class="dt-mini-stat">
+                                <span class="dt-mini-val" id="dt-total-count">0</span>
+                                <span class="dt-mini-label">Total</span>
+                            </div>
+                            <div class="dt-mini-stat approved">
+                                <span class="dt-mini-val" id="dt-approved-count">0</span>
+                                <span class="dt-mini-label">Approved</span>
+                            </div>
+                            <div class="dt-mini-stat pending">
+                                <span class="dt-mini-val" id="dt-pending-count">0</span>
+                                <span class="dt-mini-label">Pending</span>
+                            </div>
+                            <div class="dt-mini-stat rejected">
+                                <span class="dt-mini-val" id="dt-rejected-count">0</span>
+                                <span class="dt-mini-label">Rejected</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="dt-task-list" id="dt-task-list">
+                    <!-- ── Main Grid ── -->
+                    <div class="dt-grid">
 
-                        {% if tasks %}
-                            {% for task in tasks %}
-                            <div class="dt-task-item" data-status="{{ task.status }}">
-                                <div class="dt-task-left">
-                                    <div class="dt-task-icon
+                        <!-- LEFT: Submit Form -->
+                        <div class="dt-form-col">
+                            <div class="dt-form-card">
+                                <div class="dt-form-header">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Add New Task</span>
+                                </div>
+
+                                <form method="POST" action="/add-task" id="dt-add-form">
+
+                                    <div class="dt-field">
+                                        <label class="dt-label">
+                                            <i class="fas fa-folder"></i> Project Name
+                                        </label>
+
+                                        <input type="text" name="project_name" class="dt-input"
+                                            placeholder="Please enter project name" required autocomplete="off"
+                                            pattern="[A-Za-z ]+" title="Only alphabets are allowed"
+                                            oninput="this.value=this.value.replace(/[^A-Za-z ]/g,'')">
+                                    </div>
+
+                                    <div class="dt-field">
+                                        <label class="dt-label">
+                                            <i class="fas fa-clipboard-list"></i> Task Name
+                                        </label>
+
+                                        <input type="text" name="task_name" class="dt-input"
+                                            placeholder="Please enter task name" required autocomplete="off"
+                                            pattern="[A-Za-z ]+" title="Only alphabets are allowed"
+                                            oninput="this.value=this.value.replace(/[^A-Za-z ]/g,'')">
+                                    </div>
+
+                                    <div class="dt-field">
+
+                                        <label class="dt-label">
+                                            <i class="fas fa-calendar-alt"></i> Time Period
+                                        </label>
+
+                                        <div class="dt-date-row">
+
+                                            <!-- FROM DATE -->
+                                            <div class="dt-date-box">
+                                                <label class="dt-date-title">From Date</label>
+
+                                                <div class="dt-date-wrap">
+                                                    <i class="fas fa-calendar-day dt-date-icon"></i>
+
+                                                    <input type="date" name="from_date" class="dt-date-input" required>
+                                                </div>
+                                            </div>
+
+                                            <!-- TO DATE -->
+                                            <div class="dt-date-box">
+                                                <label class="dt-date-title">To Date</label>
+
+                                                <div class="dt-date-wrap">
+                                                    <i class="fas fa-calendar-check dt-date-icon"></i>
+
+                                                    <input type="date" name="to_date" class="dt-date-input" required>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <span class="dt-hint">
+                                            This will be used for attendance tracking if rejected
+                                        </span>
+
+                                    </div>
+
+                                    <button type="submit" class="dt-submit-btn">
+                                        <i class="fas fa-paper-plane"></i>
+                                        Submit Task
+                                    </button>
+
+                                </form>
+                            </div>
+
+                            <!-- Info Card -->
+                            <div class="dt-info-card">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>Note:</strong> If your task is rejected by admin, the time period
+                                    you mentioned will be marked as <strong>Absent</strong> and you'll receive
+                                    an email notification.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Task History -->
+                        <div class="dt-history-col">
+                            <div class="dt-history-card">
+                                <div class="dt-history-header">
+                                    <h5><i class="fas fa-history"></i> Task History</h5>
+                                    <div class="dt-filter-tabs">
+                                        <button class="dt-filter-btn active" data-filter="all">All</button>
+                                        <button class="dt-filter-btn" data-filter="Pending">Pending</button>
+                                        <button class="dt-filter-btn" data-filter="Approved">Approved</button>
+                                        <button class="dt-filter-btn" data-filter="Rejected">Rejected</button>
+                                    </div>
+                                </div>
+
+                                <div class="dt-task-list" id="dt-task-list">
+
+                                    {% if tasks %}
+                                    {% for task in tasks %}
+                                    <div class="dt-task-item" data-status="{{ task.status }}">
+                                        <div class="dt-task-left">
+                                            <div class="dt-task-icon
                                         {% if task.status == 'Approved' %}dt-icon-approved
                                         {% elif task.status == 'Rejected' %}dt-icon-rejected
                                         {% else %}dt-icon-pending{% endif %}">
-                                        {% if task.status == 'Approved' %}
-                                            <i class="fas fa-check"></i>
-                                        {% elif task.status == 'Rejected' %}
-                                            <i class="fas fa-times"></i>
-                                        {% else %}
-                                            <i class="fas fa-clock"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="dt-task-info">
-                                        <div class="dt-task-name">{{ task.task_name }}</div>
-                                        <div class="dt-task-project">
-                                            <i class="fas fa-folder-open"></i> {{ task.project_name }}
+                                                {% if task.status == 'Approved' %}
+                                                <i class="fas fa-check"></i>
+                                                {% elif task.status == 'Rejected' %}
+                                                <i class="fas fa-times"></i>
+                                                {% else %}
+                                                <i class="fas fa-clock"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="dt-task-info">
+                                                <div class="dt-task-name">{{ task.task_name }}</div>
+                                                <div class="dt-task-project">
+                                                    <i class="fas fa-folder-open"></i> {{ task.project_name }}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="dt-task-right">
-                                    <div class="dt-task-meta">
-                                        <span class="dt-time-chip">
-                                            <i class="fas fa-hourglass-half"></i>
-                                            {{ task.time_period or 'N/A' }}
-                                        </span>
-                                        <span class="dt-task-date">
-                                            {{ task.created_at.strftime('%d %b %Y') if task.created_at else '' }}
-                                        </span>
-                                    </div>
-                                    <span class="dt-status-badge
+                                        <div class="dt-task-right">
+                                            <div class="dt-task-meta">
+                                                <span class="dt-time-chip">
+                                                    <i class="fas fa-hourglass-half"></i>
+                                                    {{ task.time_period or 'N/A' }}
+                                                </span>
+                                                <span class="dt-task-date">
+                                                    {{ task.created_at.strftime('%d %b %Y') if task.created_at else ''
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <span class="dt-status-badge
                                         {% if task.status == 'Approved' %}dt-badge-approved
                                         {% elif task.status == 'Rejected' %}dt-badge-rejected
                                         {% else %}dt-badge-pending{% endif %}">
-                                        {{ task.status }}
-                                    </span>
+                                                {{ task.status }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div class="dt-empty">
+                                        <div class="dt-empty-icon">
+                                            <i class="fas fa-clipboard"></i>
+                                        </div>
+                                        <p>No tasks submitted yet</p>
+                                        <span>Add your first task using the form</span>
+                                    </div>
+                                    {% endif %}
+
                                 </div>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="dt-empty">
-                                <div class="dt-empty-icon">
-                                    <i class="fas fa-clipboard"></i>
-                                </div>
-                                <p>No tasks submitted yet</p>
-                                <span>Add your first task using the form</span>
-                            </div>
-                        {% endif %}
+                        </div>
 
                     </div>
                 </div>
-            </div>
 
-        </div>
-    </div>
-
-</section>
+            </section>
 
 
 
@@ -644,7 +692,8 @@
                                     <div class="lf-group">
                                         <label class="lf-label">Reason</label>
                                         <textarea class="lf-textarea" id="leave-reason" rows="3"
-                                            placeholder="Briefly describe your reason…" required></textarea>
+                                            placeholder="Briefly describe your reason..." required
+                                            oninput="this.value=this.value.replace(/[^A-Za-z .,]/g,'')"></textarea>
                                     </div>
 
                                     <button type="button" id="submit-leave-btn" class="lf-submit-btn">

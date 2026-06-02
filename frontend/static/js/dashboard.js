@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Mobile sidebar fix
     if (window.innerWidth < 992) {
 
-        
-        
+
+
 
         const closeBtn = document.getElementById('close-btn');
 
@@ -38,48 +38,48 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // MOBILE SIDEBAR MENU FIX
-document.querySelectorAll('.sidebar-nav li a').forEach(link => {
+        document.querySelectorAll('.sidebar-nav li a').forEach(link => {
 
-    link.addEventListener('click', function (e) {
+            link.addEventListener('click', function (e) {
 
-        const parentItem = this.closest('li');
+                const parentItem = this.closest('li');
 
-        const sectionId = parentItem?.getAttribute('data-section');
+                const sectionId = parentItem?.getAttribute('data-section');
 
-        // HANDLE SECTION SWITCH
-        if (sectionId) {
+                // HANDLE SECTION SWITCH
+                if (sectionId) {
 
-            e.preventDefault();
+                    e.preventDefault();
 
-            navItems.forEach(i => {
-                i.classList.remove('active');
-                i.querySelector('a')?.classList.remove('active');
+                    navItems.forEach(i => {
+                        i.classList.remove('active');
+                        i.querySelector('a')?.classList.remove('active');
+                    });
+
+                    parentItem.classList.add('active');
+                    parentItem.querySelector('a')?.classList.add('active');
+
+                    sections.forEach(s => s.classList.remove('active'));
+
+                    document.getElementById(sectionId)?.classList.add('active');
+                }
+
+                // CLOSE MOBILE SIDEBAR
+                if (window.innerWidth < 992) {
+
+                    const bsOffcanvas =
+                        bootstrap.Offcanvas.getOrCreateInstance(sidebar);
+
+                    bsOffcanvas.hide();
+
+                }
+
             });
 
-            parentItem.classList.add('active');
-            parentItem.querySelector('a')?.classList.add('active');
-
-            sections.forEach(s => s.classList.remove('active'));
-
-            document.getElementById(sectionId)?.classList.add('active');
-        }
-
-        // CLOSE MOBILE SIDEBAR
-        if (window.innerWidth < 992) {
-
-            const bsOffcanvas =
-                bootstrap.Offcanvas.getOrCreateInstance(sidebar);
-
-            bsOffcanvas.hide();
-
-        }
-
-    });
-
-});
+        });
     }
 
-    
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // LIVENESS + FACE CAPTURE  (MediaPipe FaceMesh blink detection)
@@ -515,11 +515,23 @@ document.getElementById('submit-leave-btn')?.addEventListener('click', async fun
         fd.append('end_date', endDate); fd.append('reason', reason);
         const res = await fetch('/leave/apply_leave', { method: 'POST', body: fd });
         const data = await res.json();
-        if (data.success) {
-            showToast('✅ ' + data.message + ' — Confirmation email sent!', 'success');
-            document.getElementById('leave-form').reset();
-            setTimeout(() => window.location.reload(), 1800);
-        } else { showToast('❌ ' + data.message, 'error'); }
+       if (data.success) {
+
+    showToast(
+        '✅ ' + data.message + ' — Confirmation email sent!',
+        'success'
+    );
+
+    document.getElementById('leave-form').reset();
+
+    // SAVE OPEN SECTION
+    sessionStorage.setItem("openSection", "leaves");
+
+    // RELOAD PAGE
+    setTimeout(() => {
+        location.reload();
+    }, 1800);
+} else { showToast('❌ ' + data.message, 'error'); }
     } catch { showToast('Network error. Please try again.', 'error'); }
     finally { spinner.classList.add('d-none'); this.disabled = false; }
 });
@@ -914,5 +926,61 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
+window.addEventListener("load", function () {
 
+    if (window.location.hash === "#daily-tasks") {
 
+        // REMOVE ACTIVE FROM ALL SIDEBAR ITEMS
+        document.querySelectorAll('.sidebar-nav li')
+            .forEach(li => li.classList.remove('active'));
+
+        // HIDE ALL SECTIONS
+        document.querySelectorAll('.content-section')
+            .forEach(section => section.classList.remove('active'));
+
+        // SHOW DAILY TASK SECTION
+        document.getElementById('daily-tasks')
+            ?.classList.add('active');
+
+        // ACTIVE SIDEBAR
+        document.querySelector('.sidebar-nav li[data-section="daily-tasks"]')
+            ?.classList.add('active');
+
+        // REMOVE HASH AFTER OPENING
+        history.replaceState(
+            null,
+            null,
+            window.location.pathname
+        );
+    }
+
+});
+
+window.addEventListener("load", function () {
+
+    const openSection =
+        sessionStorage.getItem("openSection");
+
+    if (openSection === "leaves") {
+
+        // REMOVE ACTIVE SIDEBAR
+        document.querySelectorAll('.sidebar-nav li')
+            .forEach(li => li.classList.remove('active'));
+
+        // HIDE ALL SECTIONS
+        document.querySelectorAll('.content-section')
+            .forEach(section => section.classList.remove('active'));
+
+        // SHOW LEAVES SECTION
+        document.getElementById('leaves')
+            ?.classList.add('active');
+
+        // ACTIVE MENU
+        document.querySelector('.sidebar-nav li[data-section="leaves"]')
+            ?.classList.add('active');
+
+        // CLEAR STORAGE
+        sessionStorage.removeItem("openSection");
+    }
+
+});

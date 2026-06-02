@@ -7,7 +7,7 @@ from mysql.connector import Error
 import os
 import pandas as pd
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 import base64
 import logging
 from dotenv import load_dotenv
@@ -156,6 +156,16 @@ def admin():
         """)
         tasks = cursor.fetchall()
 
+        # MANAGE LEAVES
+        cursor.execute("""
+            SELECT l.*, u.username
+            FROM leaves l
+            JOIN users u ON l.user_id = u.id
+            ORDER BY l.created_at DESC
+        """)
+
+        leaves = cursor.fetchall()
+
         return render_template(
             'admin.html',
             data=data,
@@ -167,7 +177,8 @@ def admin():
             search_query=search_query,
             rota_image_base64=rota_image_base64,
             holiday_table=holiday_table,
-            read_notifications=read_notifications
+            read_notifications=read_notifications,
+            leaves=leaves
         )
 
     except Exception as e:
@@ -837,7 +848,7 @@ def reject_task(task_id):
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # Get task + employee details in one query
+        # Get task + employee details
         cursor.execute("""
             SELECT dt.*, u.email, u.username
             FROM daily_tasks dt
@@ -855,17 +866,25 @@ def reject_task(task_id):
             UPDATE daily_tasks SET status = 'Rejected' WHERE id = %s
         """, (task_id,))
 
-        # Mark attendance as Absent for today
-        cursor.execute("""
-            UPDATE attendance
-            SET attendance_status = 'Absent'
-            WHERE user_id = %s
-              AND DATE(login_time) = CURDATE()
-        """, (task['employee_id'],))
+        # Mark attendance as Absent for all dates in time_period
+        from datetime import datetime, timedelta
+        dates = task['time_period'].split(" To ")
+        from_date = datetime.strptime(dates[0], "%Y-%m-%d").date()
+        to_date = datetime.strptime(dates[1], "%Y-%m-%d").date()
+
+        current_date = from_date
+        while current_date <= to_date:
+            cursor.execute("""
+                UPDATE attendance
+                SET attendance_status = 'Absent'
+                WHERE user_id = %s
+                AND DATE(login_time) = %s
+            """, (task['employee_id'], current_date))
+            current_date += timedelta(days=1)
 
         conn.commit()
 
-        # Send rejection email
+        # Send email notification
         email_subject = "⚠️ Daily Task Rejected — Attendance Marked Absent"
         email_body = f"""
 Dear {task['username']},
@@ -873,23 +892,16 @@ Dear {task['username']},
 We regret to inform you that your daily task has been REJECTED by the admin.
 
 Task Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
   • Project     : {task['project_name']}
   • Task        : {task['task_name']}
   • Time Period : {task.get('time_period') or 'N/A'}
   • Status      : ❌ REJECTED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Since your task was not completed within the time period of
-"{task.get('time_period') or 'N/A'}", your attendance for today
-has been marked as ABSENT.
-
-If you believe this is an error, please contact your manager.
+Your attendance for all days in this period has been marked as ABSENT.
 
 Regards,
 HR Administration Team
         """
-
         try:
             send_email(task['email'], email_subject, email_body)
         except Exception as mail_err:
@@ -900,8 +912,7 @@ HR Administration Team
             INSERT INTO notifications (message, user_id)
             VALUES (%s, %s)
         """, (
-            f"Your task '{task['task_name']}' for project '{task['project_name']}' "
-            f"has been rejected. Attendance marked Absent.",
+            f"Your task '{task['task_name']}' for project '{task['project_name']}' has been rejected. Attendance marked Absent.",
             task['employee_id']
         ))
         conn.commit()

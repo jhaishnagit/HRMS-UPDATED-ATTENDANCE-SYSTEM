@@ -15,7 +15,8 @@ SETUP:
 3. Import and call init_birthday_scheduler(app) in your main app.py
 4. Make sure your User model has a `date_of_birth` column (Date type)
 """
-
+from PIL import Image, ImageDraw, ImageFont
+from email.mime.image import MIMEImage
 from flask import Blueprint
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -130,7 +131,40 @@ def build_birthday_email(employee_name: str) -> str:
 </body>
 </html>"""
 
+def generate_birthday_image(employee_name):
 
+    template_path = "../frontend/static/uploads/birthday_template.png"
+
+    image = Image.open(template_path)
+
+    draw = ImageDraw.Draw(image)
+
+    # Dear font
+    dear_font = ImageFont.truetype(
+        "C:/Windows/Fonts/timesi.ttf",
+        35
+    )
+
+    # Stylish name font
+    name_font = ImageFont.truetype(
+        "C:/Windows/Fonts/GABRIOLA.TTF",
+        95
+    )
+
+
+    # Employee Name
+    draw.text(
+        (850, 285),
+        employee_name,
+        fill=(11, 44, 107),
+        font=name_font
+    )
+
+    output_path = f"birthday_{employee_name}.png"
+
+    image.save(output_path)
+
+    return output_path
 # ─────────────────────────────────────────────
 # SEND EMAIL FUNCTION
 # ─────────────────────────────────────────────
@@ -141,7 +175,7 @@ def send_birthday_email(app, employee_name: str, employee_email: str):
         smtp_port   = app.config.get('MAIL_PORT', 587)
         smtp_user   = app.config.get('MAIL_USERNAME', '')
         smtp_pass   = app.config.get('MAIL_PASSWORD', '')
-        sender_name = app.config.get('MAIL_SENDER_NAME', 'Your Company')
+        sender_name = app.config.get('MAIL_SENDER_NAME', 'HR Department')
         use_tls     = app.config.get('MAIL_USE_TLS', True)
 
         msg = MIMEMultipart('alternative')
@@ -149,8 +183,67 @@ def send_birthday_email(app, employee_name: str, employee_email: str):
         msg['From']    = f'{sender_name} <{smtp_user}>'
         msg['To']      = employee_email
 
-        html_body = build_birthday_email(employee_name)
+
+        html_body = f"""
+        <html>
+        <body style="margin:0;padding:30px;background:#f4f4f4;
+                     font-family:Arial,sans-serif;text-align:center;">
+
+        <h1 style="color:#1e3a8a;">
+            Happy Birthday {employee_name}! 🎉
+        </h1>
+
+        <img src="cid:birthdayimage"
+             style="width:700px;
+                    max-width:100%;
+                    border-radius:20px;
+                    box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+
+        <div style="
+            background:white;
+            max-width:700px;
+            margin:25px auto;
+            padding:25px;
+            border-radius:15px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.1);
+        ">
+
+        
+
+        <p style="font-size:16px;color:#555;line-height:1.8;">
+            Wishing you a day filled with happiness,
+            success, joy and good health.
+        </p>
+
+        <p style="font-size:16px;color:#555;line-height:1.8;">
+            May this year bring you great achievements and endless happiness.
+        </p>
+
+        <h2 style="color:#1e3a8a;margin-top:30px;">
+            Best Wishes From HR Department 💙
+        </h2>
+
+        <p style="font-size:15px;color:#777;">
+            Jhaishna Technologies
+        </p>
+
+        </div>
+
+        </body>
+        </html>
+        """
+
         msg.attach(MIMEText(html_body, 'html'))
+
+        from email.mime.image import MIMEImage
+        generated_image = generate_birthday_image(employee_name)
+
+        with open(generated_image, "rb") as f:
+            image = MIMEImage(f.read())
+
+        image.add_header('Content-ID', '<birthdayimage>')
+
+        msg.attach(image)
 
         server = smtplib.SMTP(smtp_host, smtp_port)
         server.ehlo()
@@ -225,14 +318,14 @@ def init_birthday_scheduler(app):
     scheduler.add_job(
         func=check_and_send_birthday_emails,
         args=[app],
-        trigger=CronTrigger(hour=0, minute=00),
+        trigger=CronTrigger(hour=9, minute=31),
         id='birthday_email_job',
         name='Daily Birthday Email Sender',
         replace_existing=True
     )
 
     scheduler.start()
-    logger.info('[BirthdayMailer] 🗓️  Birthday scheduler started — runs daily at 12:00 AM')
+    logger.info('[BirthdayMailer] 🗓️  Birthday scheduler started — runs daily az3jt 16:00 PM')
 
     # Prevent scheduler from running during Flask reloader restarts
     import atexit
