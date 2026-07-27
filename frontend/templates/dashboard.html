@@ -77,6 +77,13 @@
                     <li data-section="leaves"><a href="#"><i class="fas fa-umbrella-beach"></i> <span
                                 class="sidebar-text">Leaves</span></a></li>
 
+                    <li data-section="payslips">
+                        <a href="#">
+                            <i class="fas fa-file-pdf"></i>
+                            <span class="sidebar-text">My Payslips</span>
+                        </a>
+                    </li>
+
                     <li data-section="notifications"><a href="#"><i class="fas fa-bell"></i> <span
                                 class="sidebar-text">Notifications</span></a></li>
                     <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> <span
@@ -871,6 +878,38 @@
                 </div>
             </section>
         </main>
+
+        <section class="content-section" id="payslips">
+
+    <div class="card">
+
+        <h3>My Payslips</h3>
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+
+                    <th>Month</th>
+
+                    <th>Year</th>
+
+                    <th>Download</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="payslipTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
     </div>
 
     <!-- Bootstrap 5 JS -->
@@ -895,6 +934,8 @@
 
     <!-- Custom JS file -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/payslips.js') }}"></script>
+    
 
     <!-- ADMIN POPUP -->
     <div id="adminPopup" class="admin-popup-overlay">

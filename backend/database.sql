@@ -129,3 +129,23 @@ CREATE TABLE daily_tasks (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 );
+
+
+
+CREATE TABLE payslips(
+
+id INT AUTO_INCREMENT PRIMARY KEY,
+
+user_id INT NOT NULL,
+
+month VARCHAR(30),
+
+year INT,
+
+pdf_file LONGBLOB,
+
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+FOREIGN KEY(user_id) REFERENCES users(id)
+
+);

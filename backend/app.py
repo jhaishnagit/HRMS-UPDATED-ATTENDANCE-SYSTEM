@@ -12,7 +12,10 @@ from document.routes import document_bp
 from attendance.routes import attendance_bp
 from dashboard.routes import dashboard_bp
 from admin import admin_bp
-from birthday_mailer import init_birthday_scheduler, birthday_bp   # ← NEW
+from birthday_mailer import init_birthday_scheduler, birthday_bp  
+from payslip.routes import payslip_bp # ← NEW
+
+
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 app.secret_key = "secret123"
@@ -31,6 +34,7 @@ app.register_blueprint(attendance_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(admin_bp,       url_prefix='/admin')
 app.register_blueprint(birthday_bp)                                # ← NEW
+app.register_blueprint(payslip_bp, url_prefix="/payslip")
 
 
 @app.route('/')
@@ -48,5 +52,5 @@ def format_datetime(value, format='%Y-%m-%d'):
 
 
 if __name__ == "__main__":
-    init_birthday_scheduler(app)   # ← NEW — starts daily 9 AM birthday check
-    app.run(debug=True)
+    init_birthday_scheduler(app)
+    app.run(host="0.0.0.0", port=5000, debug=True)
