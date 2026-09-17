@@ -393,14 +393,52 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                pos => doSubmit(pos.coords.latitude, pos.coords.longitude),
-                _err => { console.warn('Geolocation failed, proceeding without.'); doSubmit(null, null); },
-                { timeout: 8000, maximumAge: 60000 }
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            console.log("Latitude:", pos.coords.latitude);
+            console.log("Longitude:", pos.coords.longitude);
+
+            doSubmit(
+                pos.coords.latitude,
+                pos.coords.longitude
             );
-        } else {
-            doSubmit(null, null);
+        },
+        err => {
+            console.error("Location error:", err);
+
+            setStatus(
+                statusEl,
+                "❌ Location permission is required. Please allow location access and try again.",
+                "error"
+            );
+
+            if (captureBtn) {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = isLogin
+                    ? "✓ Confirm Login"
+                    : "✓ Confirm Logout";
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
         }
+    );
+} else {
+    setStatus(
+        statusEl,
+        "❌ Your browser does not support location.",
+        "error"
+    );
+
+    if (captureBtn) {
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = isLogin
+            ? "✓ Confirm Login"
+            : "✓ Confirm Logout";
+    }
+}
     }
 
     // ── Status helper ──────────────────────────────────────────────────────

@@ -350,35 +350,79 @@ def mark_logout():
 
 @attendance_bp.route('/submit_daily_status', methods=['POST'])
 def submit_daily_status():
-    # Your original code (unchanged)
     user_id = session.get('user_id')
 
     if not user_id:
-        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+        return jsonify({
+            'success': False,
+            'message': 'Not logged in'
+        }), 401
 
-    daily_status = request.form.get('daily_status')
+    daily_status = request.form.get('daily_status', '').strip()
 
     if not daily_status:
-        return jsonify({'success': False, 'message': 'Please enter status'}), 400
+        return jsonify({
+            'success': False,
+            'message': 'Please enter status'
+        }), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
         today = datetime.date.today()
+
+        # Check today's attendance
+        cursor.execute("""
+            SELECT id
+            FROM attendance
+            WHERE user_id = %s
+              AND DATE(login_time) = %s
+        """, (user_id, today))
+
+        attendance = cursor.fetchone()
+
+        if not attendance:
+            return jsonify({
+                'success': False,
+                'message': 'Please mark login attendance first.'
+            }), 400
+
+        attendance_id = attendance[0]
+
+        # 1. Store daily update in daily_updates table
+        cursor.execute("""
+            INSERT INTO daily_updates
+                (user_id, update_message, submitted_at,
+                 is_verified, verification_status)
+            VALUES
+                (%s, %s, NOW(), 0, 'Pending')
+        """, (user_id, daily_status))
+
+        # 2. Update attendance table
+        # This keeps your existing dashboard flow working
         cursor.execute("""
             UPDATE attendance
             SET daily_status = %s,
                 daily_status_submitted = 1
-            WHERE user_id = %s AND DATE(login_time) = %s
-        """, (daily_status, user_id, today))
+            WHERE id = %s
+        """, (daily_status, attendance_id))
+
         conn.commit()
-        return jsonify({'success': True, 'message': 'Daily status submitted successfully!'})
+
+        return jsonify({
+            'success': True,
+            'message': 'Daily status submitted successfully!'
+        }), 200
 
     except Exception as e:
         conn.rollback()
-        print("ERROR:", e)
-        return jsonify({'success': False, 'message': 'Server error'}), 500
+        print("[submit_daily_status] ERROR:", e)
+
+        return jsonify({
+            'success': False,
+            'message': 'Server error while saving daily status'
+        }), 500
 
     finally:
         cursor.close()
