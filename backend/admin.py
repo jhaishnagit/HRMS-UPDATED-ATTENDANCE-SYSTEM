@@ -229,116 +229,228 @@ def admin_leaves():
 
 @admin_bp.route('/update_leave_status/<int:leave_id>', methods=['POST'])
 def update_leave_status(leave_id):
-    if not session.get('is_admin'):
-        return jsonify({"success": False, "message": "Access denied"})
 
-    status = request.form.get('status')
+    if not session.get('is_admin'):
+        return jsonify({
+            "success": False,
+            "message": "Access denied"
+        }), 403
+
+    status = request.form.get('status', '').strip()
+    remarks = request.form.get('remarks', '').strip()
+
     if status not in ['Approved', 'Rejected']:
-        return jsonify({"success": False, "message": "Invalid status"})
+        return jsonify({
+            "success": False,
+            "message": "Invalid status"
+        }), 400
 
     conn = get_db_connection()
+
     if not conn:
-        return jsonify({"success": False, "message": "Database error"})
+        return jsonify({
+            "success": False,
+            "message": "Database connection failed"
+        }), 500
 
     cursor = conn.cursor(dictionary=True)
+
     try:
+
+        # Get leave details
         cursor.execute("""
             SELECT l.*, u.email, u.username
             FROM leaves l
             JOIN users u ON l.user_id = u.id
             WHERE l.id = %s
         """, (leave_id,))
+
         leave = cursor.fetchone()
 
         if not leave:
-            return jsonify({"success": False, "message": "Leave not found"})
+            return jsonify({
+                "success": False,
+                "message": "Leave not found"
+            }), 404
 
+        # Only Pending leaves can be changed
         if leave['status'] != 'Pending':
-            return jsonify({"success": False, "message": f"Leave is already {leave['status']}"})
+            return jsonify({
+                "success": False,
+                "message": f"Leave is already {leave['status']}"
+            }), 400
 
+        # -----------------------------------
+        # APPROVE
+        # -----------------------------------
         if status == 'Approved':
-            paid_to_deduct = leave['used_paid_days'] or 0
+
+            paid_to_deduct = leave.get('used_paid_days', 0) or 0
             comp_to_deduct = leave.get('used_comp_days', 0) or 0
 
+            # Deduct leave balance
             cursor.execute("""
                 UPDATE leave_balance
                 SET
                     paid_leaves = GREATEST(paid_leaves - %s, 0),
-                    compensation_leaves = GREATEST(compensation_leaves - %s, 0)
+                    compensation_leaves =
+                        GREATEST(compensation_leaves - %s, 0)
                 WHERE user_id = %s
-            """, (paid_to_deduct, comp_to_deduct, leave['user_id']))
+            """, (
+                paid_to_deduct,
+                comp_to_deduct,
+                leave['user_id']
+            ))
 
-            cursor.execute("UPDATE leaves SET status = 'Approved', updated_at = NOW() WHERE id = %s", (leave_id,))
-            conn.commit()
+        # -----------------------------------
+        # UPDATE LEAVE STATUS + REMARKS
+        # -----------------------------------
 
-            email_subject = f"✅ Leave Request Approved – {leave['leave_type']}"
+        cursor.execute("""
+            UPDATE leaves
+            SET
+                status = %s,
+                remarks = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """, (
+            status,
+            remarks,
+            leave_id
+        ))
+
+        # Check that the row was actually updated
+        if cursor.rowcount != 1:
+            conn.rollback()
+
+            return jsonify({
+                "success": False,
+                "message": "Leave record was not updated"
+            }), 500
+
+        # Save changes
+        conn.commit()
+
+        # -----------------------------------
+        # EMAIL
+        # -----------------------------------
+
+        if status == 'Approved':
+
+            email_subject = (
+                f"✅ Leave Request Approved – "
+                f"{leave['leave_type']}"
+            )
+
             email_body = f"""
 Dear {leave['username']},
 
-Great news! Your leave request has been APPROVED by the administration.
+Your leave request has been APPROVED by the administration.
 
 Leave Details:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  • Leave Type  : {leave['leave_type']}
-  • From Date   : {leave['start_date']}
-  • To Date     : {leave['end_date']}
-  • Total Days  : {leave['total_days']} day(s)  ({paid_to_deduct} paid / {leave.get('used_comp_days', 0)} comp / {leave['used_unpaid_days']} unpaid)
-  • Reason      : {leave['reason']}
-  • Status      : ✅ APPROVED
+Leave Type : {leave['leave_type']}
+From Date  : {leave['start_date']}
+To Date    : {leave['end_date']}
+Total Days : {leave['total_days']}
+Status     : APPROVED
+
+Admin Remarks:
+{remarks or 'No remarks provided'}
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Please ensure all pending tasks are handed over before your leave begins.
-
-Warm regards,
-HR Administration Team
-            """
-        else:
-            cursor.execute("UPDATE leaves SET status = 'Rejected', updated_at = NOW() WHERE id = %s", (leave_id,))
-            conn.commit()
-
-            email_subject = f"❌ Leave Request Rejected – {leave['leave_type']}"
-            email_body = f"""
-Dear {leave['username']},
-
-We regret to inform you that your leave request has been REJECTED by the administration.
-
-Leave Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  • Leave Type  : {leave['leave_type']}
-  • From Date   : {leave['start_date']}
-  • To Date     : {leave['end_date']}
-  • Total Days  : {leave['total_days']} day(s)
-  • Reason      : {leave['reason']}
-  • Status      : ❌ REJECTED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Your leave balances remain unchanged.
 
 Regards,
 HR Administration Team
-            """
+"""
+
+        else:
+
+            email_subject = (
+                f"❌ Leave Request Rejected – "
+                f"{leave['leave_type']}"
+            )
+
+            email_body = f"""
+Dear {leave['username']},
+
+Your leave request has been REJECTED by the administration.
+
+Leave Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Leave Type : {leave['leave_type']}
+From Date  : {leave['start_date']}
+To Date    : {leave['end_date']}
+Total Days : {leave['total_days']}
+Status     : REJECTED
+
+Admin Remarks:
+{remarks or 'No remarks provided'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Regards,
+HR Administration Team
+"""
 
         try:
-            send_email(leave['email'], email_subject, email_body)
+            send_email(
+                leave['email'],
+                email_subject,
+                email_body
+            )
         except Exception as mail_err:
-            logging.warning(f"Email failed: {mail_err}")
+            logging.warning(
+                f"Leave email failed: {mail_err}"
+            )
 
-        cursor.execute(
-            "INSERT INTO notifications (message, user_id) VALUES (%s, %s)",
-            (f"Your leave request ({leave['leave_type']}) has been {status.lower()}.", leave['user_id'])
-        )
+        # -----------------------------------
+        # NOTIFICATION
+        # -----------------------------------
+
+        cursor.execute("""
+            INSERT INTO notifications
+                (message, user_id)
+            VALUES
+                (%s, %s)
+        """, (
+            f"Your leave request "
+            f"({leave['leave_type']}) has been "
+            f"{status.lower()}.",
+            leave['user_id']
+        ))
+
         conn.commit()
 
-        return jsonify({"success": True, "message": f"Leave {status.lower()} successfully"})
+        # -----------------------------------
+        # RETURN UPDATED DATA
+        # -----------------------------------
+
+        return jsonify({
+            "success": True,
+            "message": f"Leave {status.lower()} successfully",
+            "status": status,
+            "remarks": remarks
+        })
 
     except Exception as e:
-        logging.error(f"Update leave status error: {str(e)}")
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+
+        conn.rollback()
+
+        logging.error(
+            f"Update leave status error: {e}"
+        )
+
+        return jsonify({
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }), 500
+
     finally:
+
         if conn and conn.is_connected():
             cursor.close()
             conn.close()
-
 
 @admin_bp.route('/approve_leave/<int:leave_id>', methods=['POST'])
 def approve_leave(leave_id):
